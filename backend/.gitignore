@@ -4,6 +4,7 @@
 # build
 /dist
 /build
+*.tsbuildinfo
 
 # logs
 logs

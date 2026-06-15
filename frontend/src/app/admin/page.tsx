@@ -17,12 +17,32 @@ interface Product {
 	descriptionEn: string;
 	brand: string[];
 	type: string;
+	subtype: string;
 	image: string;
 	costPrice: number;
 	sellPrice: number;
 	wholesalePrice: number;
 	ownerId?: string;
 	owner?: { id: string; name: string };
+}
+
+interface Subcategory {
+	id: string;
+	nameUz: string;
+	nameRu: string;
+	nameEn: string;
+	name: string;
+	slug: string;
+	image: string;
+	order: number;
+	categoryId: string;
+}
+
+interface Banner {
+	id: string;
+	image: string;
+	link: string;
+	order: number;
 }
 
 interface Category {
@@ -34,6 +54,7 @@ interface Category {
 	slug: string;
 	image: string;
 	order: number;
+	subcategories?: Subcategory[];
 }
 
 const EMPTY_PRODUCT = {
@@ -41,6 +62,7 @@ const EMPTY_PRODUCT = {
 	descriptionUz: "", descriptionRu: "", descriptionEn: "",
 	brand: [] as string[],
 	type: "",
+	subtype: "",
 	image: "",
 	costPrice: 0,
 	sellPrice: 0,
@@ -48,6 +70,7 @@ const EMPTY_PRODUCT = {
 };
 
 const EMPTY_CATEGORY = { nameUz: "", nameRu: "", nameEn: "", name: "", slug: "", image: "", order: 0 };
+const EMPTY_SUBCATEGORY = { nameUz: "", nameRu: "", nameEn: "", name: "", slug: "", image: "", order: 0, categoryId: "" };
 
 type Lang = "uz" | "ru" | "en";
 const LANGS: { key: Lang; label: string; flag: string }[] = [
@@ -59,7 +82,7 @@ const LANGS: { key: Lang; label: string; flag: string }[] = [
 export default function AdminPage() {
 	const router = useRouter();
 	const [user, setUser] = useState<{ id: string; email: string; role: string } | null>(null);
-	const [activeTab, setActiveTab] = useState<"products" | "categories">("products");
+	const [activeTab, setActiveTab] = useState<"products" | "categories" | "banners">("products");
 	const [activeLang, setActiveLang] = useState<Lang>("uz");
 	const [showForm, setShowForm] = useState(false);
 
@@ -79,6 +102,18 @@ export default function AdminPage() {
 	const [catPreview, setCatPreview] = useState("");
 	const [catLoading, setCatLoading] = useState(false);
 	const [showCatForm, setShowCatForm] = useState(false);
+
+	const [subForm, setSubForm] = useState(EMPTY_SUBCATEGORY);
+	const [editingSubId, setEditingSubId] = useState<string | null>(null);
+	const [subSubmitting, setSubSubmitting] = useState(false);
+	const [subError, setSubError] = useState<string | null>(null);
+	const [showSubForm, setShowSubForm] = useState(false);
+
+	const [banners, setBanners] = useState<Banner[]>([]);
+	const [bannerLoading, setBannerLoading] = useState(false);
+	const [bannerSaving, setBannerSaving] = useState(false);
+	const [bannerError, setBannerError] = useState<string | null>(null);
+	const [bannerUploadKey, setBannerUploadKey] = useState(0);
 
 	useEffect(() => {
 		const token = getToken();
@@ -106,9 +141,41 @@ export default function AdminPage() {
 		finally { setCatLoading(false); }
 	}
 
+	async function loadBanners() {
+		setBannerLoading(true);
+		try {
+			const res = await fetch(`${API_URL}/banners`);
+			setBanners(await res.json());
+		} catch { setBannerError("Yuklab bo'lmadi"); }
+		finally { setBannerLoading(false); }
+	}
+
 	useEffect(() => {
-		if (user) { loadProducts(); loadCategories(); }
+		if (user) { loadProducts(); loadCategories(); loadBanners(); }
 	}, [user]);
+
+	async function handleBannerAdd(image: string) {
+		if (!image) return;
+		setBannerSaving(true);
+		setBannerError(null);
+		try {
+			const res = await fetch(`${API_URL}/banners`, {
+				method: "POST",
+				headers: authHeaders(),
+				body: JSON.stringify({ image, order: banners.length }),
+			});
+			if (res.status === 401) { router.push("/login"); return; }
+			if (!res.ok) { const d = await res.json(); setBannerError(d.message ?? "Xatolik"); return; }
+			await loadBanners();
+		} catch { setBannerError("Server xatosi"); }
+		finally { setBannerSaving(false); setBannerUploadKey((k) => k + 1); }
+	}
+
+	async function handleBannerDelete(id: string) {
+		if (!confirm("Rasmni o'chirishni tasdiqlaysizmi?")) return;
+		await fetch(`${API_URL}/banners/${id}`, { method: "DELETE", headers: authHeaders() });
+		await loadBanners();
+	}
 
 	async function handleSubmit(e: FormEvent) {
 		e.preventDefault();
@@ -140,7 +207,7 @@ export default function AdminPage() {
 		setForm({
 			nameUz: p.nameUz, nameRu: p.nameRu, nameEn: p.nameEn,
 			descriptionUz: p.descriptionUz, descriptionRu: p.descriptionRu, descriptionEn: p.descriptionEn,
-			brand: p.brand, type: p.type, image: p.image,
+			brand: p.brand, type: p.type, subtype: p.subtype || "", image: p.image,
 			costPrice: p.costPrice, sellPrice: p.sellPrice, wholesalePrice: p.wholesalePrice,
 		});
 		setShowForm(true);
@@ -194,6 +261,54 @@ export default function AdminPage() {
 		setShowCatForm(false);
 	}
 
+	function openNewSub(categoryId: string) {
+		setEditingSubId(null);
+		setSubForm({ ...EMPTY_SUBCATEGORY, categoryId });
+		setSubError(null);
+		setShowSubForm(true);
+	}
+
+	function startSubEdit(sub: Subcategory) {
+		setEditingSubId(sub.id);
+		setSubForm({
+			nameUz: sub.nameUz || "", nameRu: sub.nameRu || "", nameEn: sub.nameEn || "",
+			name: sub.name || "", slug: sub.slug, image: sub.image || "", order: sub.order,
+			categoryId: sub.categoryId,
+		});
+		setSubError(null);
+		setShowSubForm(true);
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	}
+
+	function cancelSubEdit() {
+		setEditingSubId(null);
+		setSubForm(EMPTY_SUBCATEGORY);
+		setShowSubForm(false);
+	}
+
+	async function handleSubSubmit(e: FormEvent) {
+		e.preventDefault();
+		setSubSubmitting(true);
+		setSubError(null);
+		try {
+			const url = editingSubId ? `${API_URL}/subcategories/${editingSubId}` : `${API_URL}/subcategories`;
+			const method = editingSubId ? "PATCH" : "POST";
+			const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(subForm) });
+			if (res.status === 401) { router.push("/login"); return; }
+			const data = await res.json();
+			if (!res.ok) { setSubError(data.message ?? "Xatolik"); return; }
+			cancelSubEdit();
+			await loadCategories();
+		} catch { setSubError("Server xatosi"); }
+		finally { setSubSubmitting(false); }
+	}
+
+	async function handleSubDelete(id: string) {
+		if (!confirm("Subkategoriyani o'chirishni tasdiqlaysizmi?")) return;
+		await fetch(`${API_URL}/subcategories/${id}`, { method: "DELETE", headers: authHeaders() });
+		await loadCategories();
+	}
+
 	function handleLogout() { logout(); router.push("/login"); }
 
 	const isAdmin = user?.role === "ADMIN";
@@ -237,6 +352,15 @@ export default function AdminPage() {
 							>
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
 								Kategoriyalar
+							</button>
+						)}
+						{isAdmin && (
+							<button
+								className={`adm-nav-item${activeTab === "banners" ? " active" : ""}`}
+								onClick={() => setActiveTab("banners")}
+							>
+								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M2 17l5-5 4 4 5-5 6 6"/></svg>
+								Karusel
 							</button>
 						)}
 					</nav>
@@ -325,13 +449,28 @@ export default function AdminPage() {
 											</div>
 											<div className="adm-field">
 												<label>Kategoriya</label>
-												<select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))} required>
+												<select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value, subtype: "" }))} required>
 													<option value="">— tanlang —</option>
 													{categories.map((c) => (
-														<option key={c.id} value={c.slug}>{c.name}</option>
+														<option key={c.id} value={c.slug}>{c.nameUz || c.nameRu || c.nameEn || c.name}</option>
 													))}
 												</select>
 											</div>
+											{(() => {
+												const subs = categories.find((c) => c.slug === form.type)?.subcategories ?? [];
+												if (subs.length === 0) return null;
+												return (
+													<div className="adm-field">
+														<label>Subkategoriya</label>
+														<select value={form.subtype} onChange={(e) => setForm((p) => ({ ...p, subtype: e.target.value }))}>
+															<option value="">— yo'q —</option>
+															{subs.map((s) => (
+																<option key={s.id} value={s.slug}>{s.nameUz || s.nameRu || s.nameEn || s.name}</option>
+															))}
+														</select>
+													</div>
+												);
+											})()}
 										</div>
 
 										<div className="adm-field">
@@ -427,6 +566,15 @@ export default function AdminPage() {
 													<span className="adm-table-badge">
 														{(() => { const c = categories.find((c) => c.slug === p.type); return c ? (c.nameUz || c.nameRu || c.nameEn || c.name) : p.type; })()}
 													</span>
+													{p.subtype && (
+														<span className="adm-table-badge adm-table-badge-sub">
+															{(() => {
+																const c = categories.find((c) => c.slug === p.type);
+																const s = c?.subcategories?.find((s) => s.slug === p.subtype);
+																return s ? (s.nameUz || s.nameRu || s.nameEn || s.name) : p.subtype;
+															})()}
+														</span>
+													)}
 												</td>
 												<td className="adm-table-price">${p.sellPrice}</td>
 												{isAdmin && <td className="adm-table-owner">{p.owner?.name || "—"}</td>}
@@ -521,6 +669,64 @@ export default function AdminPage() {
 							</div>
 						)}
 
+						{showSubForm && (
+							<div className="adm-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) cancelSubEdit(); }}>
+								<div className="adm-modal adm-modal-sm">
+									<div className="adm-modal-header">
+										<h2>{editingSubId ? "Subkategoriyani tahrirlash" : "Yangi subkategoriya"}</h2>
+										<button className="adm-modal-close" onClick={cancelSubEdit}>
+											<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+										</button>
+									</div>
+									<form className="adm-form" onSubmit={handleSubSubmit}>
+										<div className="adm-field">
+											<label>Kategoriya</label>
+											<select value={subForm.categoryId} onChange={(e) => setSubForm((p) => ({ ...p, categoryId: e.target.value }))} required>
+												<option value="">— tanlang —</option>
+												{categories.map((c) => (
+													<option key={c.id} value={c.id}>{c.nameUz || c.nameRu || c.nameEn || c.name}</option>
+												))}
+											</select>
+										</div>
+										<div className="adm-form-grid">
+											<div className="adm-field">
+												<label>Nomi (UZ)</label>
+												<input type="text" placeholder="Masalan: Reduktorlar" value={subForm.nameUz}
+													onChange={(e) => setSubForm((p) => ({ ...p, nameUz: e.target.value }))} required />
+											</div>
+											<div className="adm-field">
+												<label>Nomi (RU)</label>
+												<input type="text" placeholder="Например: Редукторы" value={subForm.nameRu}
+													onChange={(e) => setSubForm((p) => ({ ...p, nameRu: e.target.value }))} />
+											</div>
+											<div className="adm-field">
+												<label>Nomi (EN)</label>
+												<input type="text" placeholder="E.g.: Reducers" value={subForm.nameEn}
+													onChange={(e) => setSubForm((p) => ({ ...p, nameEn: e.target.value }))} />
+											</div>
+											<div className="adm-field">
+												<label>Slug</label>
+												<input type="text" placeholder="Masalan: reduktorlar" value={subForm.slug}
+													onChange={(e) => setSubForm((p) => ({ ...p, slug: e.target.value }))} required />
+											</div>
+										</div>
+										<div className="adm-field">
+											<label>Tartib raqami</label>
+											<input type="number" value={subForm.order} min={0}
+												onChange={(e) => setSubForm((p) => ({ ...p, order: Number(e.target.value) }))} />
+										</div>
+										{subError && <div className="adm-error">{subError}</div>}
+										<div className="adm-form-actions">
+											<button type="button" className="adm-btn-cancel" onClick={cancelSubEdit}>Bekor qilish</button>
+											<button type="submit" className="adm-btn-save" disabled={subSubmitting}>
+												{subSubmitting ? "Saqlanmoqda..." : editingSubId ? "Yangilash" : "Qo'shish"}
+											</button>
+										</div>
+									</form>
+								</div>
+							</div>
+						)}
+
 						{catLoading ? (
 							<div className="adm-loading"><div className="adm-spinner" />Yuklanmoqda...</div>
 						) : categories.length === 0 ? (
@@ -551,6 +757,80 @@ export default function AdminPage() {
 												<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
 											</button>
 										</div>
+
+										<div className="adm-cat-subs">
+											<div className="adm-cat-subs-head">
+												<span className="adm-cat-subs-title">Subkategoriyalar</span>
+												<button className="adm-cat-subs-add" onClick={() => openNewSub(cat.id)}>
+													<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+													Qo'shish
+												</button>
+											</div>
+											{(cat.subcategories ?? []).length === 0 ? (
+												<div className="adm-cat-subs-empty">Subkategoriyalar yo'q</div>
+											) : (
+												<ul className="adm-cat-subs-list">
+													{cat.subcategories!.map((sub) => (
+														<li key={sub.id} className="adm-cat-sub-item">
+															<span className="adm-cat-sub-name">{sub.nameUz || sub.nameRu || sub.nameEn || sub.name}</span>
+															<span className="adm-cat-sub-slug">/{sub.slug}</span>
+															<div className="adm-cat-sub-actions">
+																<button className="adm-action-btn edit" onClick={() => startSubEdit(sub)} title="Tahrirlash">
+																	<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+																</button>
+																<button className="adm-action-btn delete" onClick={() => handleSubDelete(sub.id)} title="O'chirish">
+																	<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+																</button>
+															</div>
+														</li>
+													))}
+												</ul>
+											)}
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+					</>
+				)}
+
+				{/* =================== CAROUSEL =================== */}
+				{activeTab === "banners" && isAdmin && (
+					<>
+						<div className="adm-toolbar">
+							<div>
+								<h1 className="adm-page-title">Karusel</h1>
+								<p className="adm-page-sub">{banners.length} ta rasm</p>
+							</div>
+						</div>
+
+						<div className="adm-banner-upload">
+							<label className="adm-field-label">Yangi rasm qo'shish</label>
+							<ImageUpload
+								key={bannerUploadKey}
+								value=""
+								onChange={(path) => handleBannerAdd(path)}
+								onError={(msg) => setBannerError(msg)}
+							/>
+							{bannerSaving && <div className="adm-banner-saving">Saqlanmoqda...</div>}
+							{bannerError && <div className="adm-error">{bannerError}</div>}
+						</div>
+
+						{bannerLoading ? (
+							<div className="adm-loading"><div className="adm-spinner" />Yuklanmoqda...</div>
+						) : banners.length === 0 ? (
+							<div className="adm-empty">
+								<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M2 17l5-5 4 4 5-5 6 6"/></svg>
+								<p>Karusel rasmlari yo'q</p>
+							</div>
+						) : (
+							<div className="adm-banner-grid">
+								{banners.map((b) => (
+									<div key={b.id} className="adm-banner-card">
+										<img src={imgUrl(b.image)} alt="" className="adm-banner-img" />
+										<button className="adm-banner-del" onClick={() => handleBannerDelete(b.id)} title="O'chirish">
+											<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+										</button>
 									</div>
 								))}
 							</div>

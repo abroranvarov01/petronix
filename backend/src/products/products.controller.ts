@@ -10,8 +10,8 @@ export class ProductsController {
 
   // Публичный — все товары (sellPrice для показа, без costPrice/wholesalePrice)
   @Get()
-  findAll(@Query('type') type?: string) {
-    return this.productsService.findAllPublic(type);
+  findAll(@Query('type') type?: string, @Query('subtype') subtype?: string) {
+    return this.productsService.findAllPublic(type, subtype);
   }
 
   // Только авторизованные — все товары с полными ценами

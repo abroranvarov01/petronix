@@ -21,8 +21,18 @@ interface Product {
 	image: string;
 	brand: string[];
 	type: string;
+	subtype: string;
 	sellPrice: number;
 	owner?: { id: string; name: string };
+}
+
+interface Subcategory {
+	id: string;
+	nameUz: string;
+	nameRu: string;
+	nameEn: string;
+	name: string;
+	slug: string;
 }
 
 interface Category {
@@ -32,9 +42,10 @@ interface Category {
 	nameEn: string;
 	name: string;
 	slug: string;
+	subcategories?: Subcategory[];
 }
 
-function getCatName(cat: Category, lang: Lang): string {
+function getCatName(cat: Category | Subcategory, lang: Lang): string {
 	if (lang === "ru" && cat.nameRu) return cat.nameRu;
 	if (lang === "en" && cat.nameEn) return cat.nameEn;
 	return cat.nameUz || cat.nameRu || cat.nameEn || cat.name || "";
@@ -113,6 +124,7 @@ function CatalogPage() {
 	const [loading, setLoading] = useState(true);
 
 	const [selectedType, setSelectedType] = useState<string | null>(searchParams.get("type"));
+	const [selectedSubtype, setSelectedSubtype] = useState<string | null>(searchParams.get("subtype"));
 	const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
 
 	useEffect(() => {
@@ -126,21 +138,29 @@ function CatalogPage() {
 
 	useEffect(() => {
 		setSelectedType(searchParams.get("type"));
+		setSelectedSubtype(searchParams.get("subtype"));
 		setSearchQuery(searchParams.get("q") || "");
 	}, [searchParams]);
 
 	const filtered = useMemo(() => {
 		return products.filter((p) => {
 			const typeOk = !selectedType || p.type === selectedType;
+			const subtypeOk = !selectedSubtype || p.subtype === selectedSubtype;
 			const q = searchQuery.toLowerCase();
 			const searchOk = !q ||
 				getName(p, lang).toLowerCase().includes(q) ||
 				getDesc(p, lang).toLowerCase().includes(q);
-			return typeOk && searchOk;
+			return typeOk && subtypeOk && searchOk;
 		});
-	}, [products, selectedType, searchQuery, lang]);
+	}, [products, selectedType, selectedSubtype, searchQuery, lang]);
 
 	const activeCategory = categories.find((c) => c.slug === selectedType);
+	const activeSubcategory = activeCategory?.subcategories?.find((s) => s.slug === selectedSubtype);
+
+	function selectCategory(slug: string | null) {
+		setSelectedType(slug);
+		setSelectedSubtype(null);
+	}
 
 	const handleOrder = (product: Product) => {
 		const adminUsername = process.env.NEXT_PUBLIC_ADMIN_USER_NAME;
@@ -158,26 +178,48 @@ function CatalogPage() {
 					<h3 className="catalog-aside-title">{t("prod_categories")}</h3>
 					<button
 						className={`cat-link${!selectedType ? " active" : ""}`}
-						onClick={() => setSelectedType(null)}
+						onClick={() => selectCategory(null)}
 					>
 						{t("prod_all")}
 					</button>
-					{categories.map((cat) => (
-						<button
-							key={cat.id}
-							className={`cat-link${selectedType === cat.slug ? " active" : ""}`}
-							onClick={() => setSelectedType(cat.slug)}
-						>
-							{getCatName(cat, lang)}
-						</button>
-					))}
+					{categories.map((cat) => {
+						const isActive = selectedType === cat.slug;
+						const subs = cat.subcategories ?? [];
+						return (
+							<div key={cat.id} className="cat-group">
+								<button
+									className={`cat-link${isActive ? " active" : ""}`}
+									onClick={() => selectCategory(cat.slug)}
+								>
+									{getCatName(cat, lang)}
+								</button>
+								{isActive && subs.length > 0 && (
+									<div className="cat-sublist">
+										{subs.map((sub) => (
+											<button
+												key={sub.id}
+												className={`cat-sublink${selectedSubtype === sub.slug ? " active" : ""}`}
+												onClick={() => setSelectedSubtype(selectedSubtype === sub.slug ? null : sub.slug)}
+											>
+												{getCatName(sub, lang)}
+											</button>
+										))}
+									</div>
+								)}
+							</div>
+						);
+					})}
 				</aside>
 
 				{/* Right: products */}
 				<main className="catalog-main">
 					<div className="catalog-toprow">
 						<h2 className="catalog-heading">
-							{activeCategory ? getCatName(activeCategory, lang) : t("prod_all_products")}
+							{activeSubcategory
+								? getCatName(activeSubcategory, lang)
+								: activeCategory
+									? getCatName(activeCategory, lang)
+									: t("prod_all_products")}
 						</h2>
 					</div>
 

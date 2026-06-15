@@ -203,6 +203,7 @@ const t = {
   /* ── Products page ── */
   prod_all:        { uz: "Barchasi",          ru: "Все",               en: "All" },
   prod_categories: { uz: "Kategoriyalar",     ru: "Категории",         en: "Categories" },
+  prod_subcategories:{ uz: "Subkategoriyalar", ru: "Подкатегории",     en: "Subcategories" },
   prod_all_products:{ uz: "Barcha mahsulotlar", ru: "Все товары",      en: "All products" },
   prod_search:     { uz: "Mahsulot qidirish...", ru: "Поиск товара...", en: "Search product..." },
   prod_search_btn: { uz: "Qidirish",            ru: "Поиск",              en: "Search" },

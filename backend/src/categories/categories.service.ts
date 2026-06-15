@@ -8,6 +8,11 @@ export class CategoriesService {
   async findAll() {
     return this.prisma.category.findMany({
       orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+      include: {
+        subcategories: {
+          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+        },
+      },
     });
   }
 

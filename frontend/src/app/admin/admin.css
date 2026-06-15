@@ -428,6 +428,12 @@
   font-weight: 500;
 }
 
+.adm-table-badge-sub {
+  background: #0d1f12;
+  color: #4ade80;
+  margin-left: 6px;
+}
+
 .adm-table-price { font-weight: 600; color: #22c55e; font-size: 14px; }
 .adm-table-owner { color: #4a6075; font-size: 13px; }
 
@@ -495,6 +501,118 @@
   gap: 6px;
   padding: 8px 16px 14px;
 }
+
+/* ── Subcategories inside category card ── */
+.adm-cat-subs {
+  border-top: 1px solid #162032;
+  padding: 12px 16px 14px;
+}
+
+.adm-cat-subs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.adm-cat-subs-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4a6075;
+}
+
+.adm-cat-subs-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid #162032;
+  background: transparent;
+  color: #22c55e;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.adm-cat-subs-add:hover { background: #0d1f12; border-color: #22c55e44; }
+
+.adm-cat-subs-empty { font-size: 12px; color: #3a4d5f; padding: 4px 0; }
+
+.adm-cat-subs-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.adm-cat-sub-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #0c1626;
+}
+
+.adm-cat-sub-name { font-size: 13px; color: #cdd9e8; font-weight: 500; }
+.adm-cat-sub-slug { font-size: 11px; color: #4a6075; }
+.adm-cat-sub-actions { display: flex; gap: 4px; margin-left: auto; }
+.adm-cat-sub-actions .adm-action-btn { width: 28px; height: 28px; }
+
+/* ── Carousel banners ────────────────── */
+.adm-banner-upload {
+  max-width: 520px;
+  margin-bottom: 24px;
+}
+
+.adm-field-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7a8fa3;
+  margin-bottom: 8px;
+}
+
+.adm-banner-saving { font-size: 13px; color: #22c55e; margin-top: 8px; }
+
+.adm-banner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.adm-banner-card {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #162032;
+  background: #0a1220;
+}
+
+.adm-banner-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.adm-banner-del {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: none;
+  background: rgba(10, 12, 18, 0.75);
+  color: #f87171;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: background 0.2s, color 0.2s;
+}
+.adm-banner-del:hover { background: #f87171; color: #fff; }
 
 /* ── States ──────────────────────────── */
 .adm-loading {

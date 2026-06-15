@@ -24,13 +24,38 @@ model User {
 }
 
 model Category {
+  id            String        @id @default(cuid())
+  nameUz        String        @default("")
+  nameRu        String        @default("")
+  nameEn        String        @default("")
+  name          String        @default("")
+  slug          String        @unique
+  image         String        @default("")
+  order         Int           @default(0)
+  createdAt     DateTime      @default(now())
+  subcategories Subcategory[]
+}
+
+model Subcategory {
+  id         String   @id @default(cuid())
+  nameUz     String   @default("")
+  nameRu     String   @default("")
+  nameEn     String   @default("")
+  name       String   @default("")
+  slug       String   @unique
+  image      String   @default("")
+  order      Int      @default(0)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([categoryId])
+}
+
+model Banner {
   id        String   @id @default(cuid())
-  nameUz    String   @default("")
-  nameRu    String   @default("")
-  nameEn    String   @default("")
-  name      String   @default("")
-  slug      String   @unique
   image     String   @default("")
+  link      String   @default("")
   order     Int      @default(0)
   createdAt DateTime @default(now())
 }
@@ -45,6 +70,7 @@ model Product {
   descriptionEn  String   @default("")
   brand          String[]
   type           String
+  subtype        String   @default("")
   image          String   @default("")
   costPrice      Float    @default(0)
   sellPrice      Float    @default(0)

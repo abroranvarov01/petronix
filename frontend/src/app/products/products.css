@@ -296,6 +296,36 @@
 .cat-link:hover { background: rgba(34,197,94,0.08); color: #22c55e; }
 .cat-link.active { background: rgba(34,197,94,0.15); color: #22c55e; font-weight: 600; border-left: 3px solid #22c55e; }
 
+.cat-group { display: flex; flex-direction: column; }
+
+.cat-sublist {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 2px 0 4px 12px;
+    padding-left: 8px;
+    border-left: 1px solid rgba(148,163,184,0.2);
+}
+
+.cat-sublink {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-family: inherit;
+}
+
+.cat-sublink:hover { background: rgba(34,197,94,0.08); color: #22c55e; }
+.cat-sublink.active { background: rgba(34,197,94,0.12); color: #22c55e; font-weight: 600; }
+
 .catalog-main { flex: 1; min-width: 0; }
 
 .catalog-toprow {

@@ -6,8 +6,11 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   // Публичный список — без costPrice и wholesalePrice
-  async findAllPublic(type?: string) {
-    const where = type ? { type } : {};
+  async findAllPublic(type?: string, subtype?: string) {
+    const where = {
+      ...(type ? { type } : {}),
+      ...(subtype ? { subtype } : {}),
+    };
     const products = await this.prisma.product.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -21,6 +24,7 @@ export class ProductsService {
         descriptionEn: true,
         brand: true,
         type: true,
+        subtype: true,
         image: true,
         sellPrice: true,
         owner: { select: { id: true, name: true } },
@@ -45,6 +49,7 @@ export class ProductsService {
         descriptionEn: true,
         brand: true,
         type: true,
+        subtype: true,
         image: true,
         sellPrice: true,
         owner: { select: { id: true, name: true } },

@@ -5,48 +5,30 @@ import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { API_URL, imgUrl } from "@/lib/api";
-import { useT, useLang } from "@/lib/i18n";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "./CategoryBanner.css";
 
-interface Category {
+interface Banner {
   id: string;
-  nameUz: string;
-  nameRu: string;
-  nameEn: string;
-  name: string;
-  slug: string;
   image: string;
+  link: string;
   order: number;
 }
 
-const FALLBACK: Category[] = [
-  { id: "fallback-0", nameUz: "Petronix CNG Solutions", nameRu: "Petronix CNG Solutions", nameEn: "Petronix CNG Solutions", name: "Petronix CNG Solutions", slug: "", image: "", order: 0 },
-];
-
 export default function CategoryBanner() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [brokenImgs, setBrokenImgs] = useState<Set<string>>(new Set());
-  const t = useT();
-  const { lang } = useLang();
-
-  function getCatName(cat: Category): string {
-    if (lang === "ru" && cat.nameRu) return cat.nameRu;
-    if (lang === "en" && cat.nameEn) return cat.nameEn;
-    return cat.nameUz || cat.nameRu || cat.nameEn || cat.name || "";
-  }
 
   useEffect(() => {
-    fetch(`${API_URL}/categories`)
+    fetch(`${API_URL}/banners`)
       .then((r) => r.json())
-      .then((data: Category[]) => {
+      .then((data: Banner[]) => {
         if (Array.isArray(data)) {
-          const withPhoto = data.filter((c) => !!c.image);
-          setCategories(withPhoto);
+          setBanners(data.filter((b) => !!b.image));
         }
       })
       .catch(() => {})
@@ -55,56 +37,60 @@ export default function CategoryBanner() {
 
   if (!loaded) return null;
 
-  const slides = categories.length > 0 ? categories : FALLBACK;
+  const slides = banners.filter((b) => !brokenImgs.has(b.id));
+  if (slides.length === 0) return null;
 
   return (
     <section className="cat-banner">
       <Swiper
-        modules={[Autoplay, Pagination]}
+        modules={[Autoplay, Navigation, Pagination]}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
-        pagination={{ clickable: true }}
+        pagination={{ clickable: true, el: ".cat-banner-dots" }}
+        navigation={{ prevEl: ".cat-banner-prev", nextEl: ".cat-banner-next" }}
         loop={slides.length > 1}
         className="cat-swiper"
       >
-        {slides.map((cat) => {
-          const href = cat.slug ? `/products?type=${cat.slug}` : "/products";
-          const showImg = !!cat.image && !brokenImgs.has(cat.id);
+        {slides.map((banner) => {
+          const img = (
+            <img
+              src={imgUrl(banner.image)}
+              alt=""
+              className="cat-banner-img"
+              onError={() =>
+                setBrokenImgs((prev) => new Set(prev).add(banner.id))
+              }
+            />
+          );
 
           return (
-            <SwiperSlide key={cat.id}>
-              <Link href={href} className="cat-banner-slide">
-                {showImg ? (
-                  <img
-                    src={imgUrl(cat.image)}
-                    alt={cat.name}
-                    className="cat-banner-img"
-                    onError={() =>
-                      setBrokenImgs((prev) => new Set(prev).add(cat.id))
-                    }
-                  />
-                ) : (
-                  <div className="cat-banner-placeholder">
-                    <svg className="cat-banner-ph-icon" viewBox="0 0 80 80" fill="none">
-                      <rect x="8" y="16" width="64" height="48" rx="6" stroke="currentColor" strokeWidth="2.5" />
-                      <circle cx="28" cy="36" r="7" stroke="currentColor" strokeWidth="2.5" />
-                      <path
-                        d="M8 52 L26 38 L38 48 L54 30 L72 48 L72 58 C72 61.3 69.3 64 66 64 L14 64 C10.7 64 8 61.3 8 58Z"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                )}
-                <div className="cat-banner-overlay">
-                  <h2 className="cat-banner-title">{getCatName(cat)}</h2>
-                  <span className="cat-banner-cta">{t("banner_cta")}</span>
-                </div>
-              </Link>
+            <SwiperSlide key={banner.id}>
+              {banner.link ? (
+                <Link href={banner.link} className="cat-banner-slide">
+                  {img}
+                </Link>
+              ) : (
+                <div className="cat-banner-slide">{img}</div>
+              )}
             </SwiperSlide>
           );
         })}
       </Swiper>
+
+      {slides.length > 1 && (
+        <>
+          <button className="cat-banner-arrow cat-banner-prev" aria-label="Previous">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <button className="cat-banner-arrow cat-banner-next" aria-label="Next">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <div className="cat-banner-dots" />
+        </>
+      )}
     </section>
   );
 }
