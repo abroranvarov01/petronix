@@ -47,7 +47,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: "http://${SERVER_HOST:-localhost}:3001/api"
+        # Браузер ходит на тот же https-домен, nginx проксирует /api на backend:3001.
+        # Так не возникает mixed content на https://petronix.uz
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-https://petronix.uz/api}"
     container_name: petronix_frontend
     restart: unless-stopped
     depends_on:
