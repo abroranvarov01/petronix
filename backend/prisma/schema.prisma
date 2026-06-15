@@ -13,6 +13,22 @@ enum Role {
   DEALER
 }
 
+enum OrderStatus {
+  NEW
+  CONFIRMED
+  PAID
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -71,12 +87,62 @@ model Product {
   brand          String[]
   type           String
   subtype        String   @default("")
+  unit           String   @default("dona")
   image          String   @default("")
   costPrice      Float    @default(0)
   sellPrice      Float    @default(0)
   wholesalePrice Float    @default(0)
   ownerId        String?
   owner          User?    @relation(fields: [ownerId], references: [id])
+  orderItems     OrderItem[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  status        OrderStatus @default(NEW)
+  customerName  String
+  customerPhone String
+  address       String      @default("")
+  comment       String      @default("")
+  userId        String?
+  total         Float       @default(0)
+  items         OrderItem[]
+  payment       Payment?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id           String  @id @default(cuid())
+  orderId      String
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product @relation(fields: [productId], references: [id])
+  sellerId     String?
+  nameSnapshot String  @default("")
+  qty          Int
+  unitPrice    Float
+  subtotal     Float
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([sellerId])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  orderId     String        @unique
+  order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount      Float
+  method      String        @default("")
+  status      PaymentStatus @default(PENDING)
+  provider    String        @default("")
+  providerRef String        @default("")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }

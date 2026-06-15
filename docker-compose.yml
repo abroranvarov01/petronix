@@ -15,6 +15,13 @@ services:
       # - ./backup.sql:/docker-entrypoint-initdb.d/backup.sql
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: petronix_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
   backend:
     build:
       context: ./backend
@@ -23,8 +30,10 @@ services:
     restart: unless-stopped
     depends_on:
       - db
+      - redis
     environment:
       DATABASE_URL: "postgresql://postgres:adminsecret@db:5432/petronix_db"
+      REDIS_URL: "redis://redis:6379"
       PORT: 3001
       TELEGRAM_BOT_TOKEN: "8591029476:AAEGZBysaWCgrzyZNwAdFi8wl4Q9kEFl1Pk"
       TELEGRAM_CHAT_ID: "-4912475701"
@@ -51,3 +60,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

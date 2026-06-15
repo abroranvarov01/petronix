@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { API_URL, imgUrl } from "@/lib/api";
 import { useLang, useT } from "@/lib/i18n";
+import { addToCart } from "@/lib/cart";
 import "./products.css";
 import type { Lang } from "@/lib/i18n";
 
@@ -96,7 +97,7 @@ function ProductCard({ product, lang, onOrder }: {
 				)}
 				{desc && <p className="pcard-desc">{desc}</p>}
 				<div className="pcard-actions">
-					<button className="pcard-buy" onClick={onOrder}>{t("prod_order")}</button>
+					<button className="pcard-buy" onClick={onOrder}>{t("prod_add_cart")}</button>
 					<button className="pcard-details">{t("prod_details") || "Подробнее"}</button>
 				</div>
 			</div>
@@ -163,9 +164,14 @@ function CatalogPage() {
 	}
 
 	const handleOrder = (product: Product) => {
-		const adminUsername = process.env.NEXT_PUBLIC_ADMIN_USER_NAME;
-		const msg = `Assalomu alaykum! Mahsulot bo'yicha so'rov:\n🛍 ${getName(product, "uz")}\n💰 ${formatUZS(product.sellPrice)}`;
-		window.open(`https://t.me/${adminUsername}?text=${encodeURIComponent(msg)}`, "_blank");
+		addToCart({
+			productId: product.id,
+			nameUz: product.nameUz,
+			nameRu: product.nameRu,
+			nameEn: product.nameEn,
+			image: product.image,
+			sellPrice: product.sellPrice,
+		});
 	};
 
 	return (

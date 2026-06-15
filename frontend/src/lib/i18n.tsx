@@ -211,6 +211,24 @@ const t = {
   prod_empty:      { uz: "Mahsulotlar topilmadi.", ru: "Товары не найдены.", en: "No products found." },
   prod_order:      { uz: "Buyurtma berish",   ru: "Заказать",           en: "Order" },
   prod_details:    { uz: "Batafsil",          ru: "Подробнее",          en: "Details" },
+  prod_add_cart:   { uz: "Savatga qo'shish",  ru: "В корзину",          en: "Add to cart" },
+  prod_in_cart:    { uz: "Savatda",           ru: "В корзине",          en: "In cart" },
+
+  /* ── Cart / Checkout ── */
+  cart_title:      { uz: "Savatcha",          ru: "Корзина",            en: "Cart" },
+  cart_empty:      { uz: "Savatcha bo'sh",    ru: "Корзина пуста",      en: "Your cart is empty" },
+  cart_total:      { uz: "Jami",              ru: "Итого",              en: "Total" },
+  cart_checkout:   { uz: "Buyurtma rasmiylashtirish", ru: "Оформить заказ", en: "Checkout" },
+  cart_remove:     { uz: "O'chirish",         ru: "Удалить",            en: "Remove" },
+  cart_continue:   { uz: "Xaridni davom ettirish", ru: "Продолжить покупки", en: "Continue shopping" },
+  co_name:         { uz: "Ismingiz",          ru: "Ваше имя",           en: "Your name" },
+  co_phone:        { uz: "Telefon",           ru: "Телефон",            en: "Phone" },
+  co_address:      { uz: "Manzil",            ru: "Адрес",              en: "Address" },
+  co_comment:      { uz: "Izoh",              ru: "Комментарий",        en: "Comment" },
+  co_submit:       { uz: "Buyurtma berish",   ru: "Оформить заказ",     en: "Place order" },
+  co_success:      { uz: "Buyurtma qabul qilindi!", ru: "Заказ принят!", en: "Order placed!" },
+  co_success_sub:  { uz: "Tez orada siz bilan bog'lanamiz", ru: "Мы свяжемся с вами в ближайшее время", en: "We will contact you shortly" },
+  nav_cart:        { uz: "Savatcha",          ru: "Корзина",            en: "Cart" },
 
   /* ── Login / Register ── */
   login_title:     { uz: "Tizimga kirish",    ru: "Вход в систему",     en: "Sign in" },

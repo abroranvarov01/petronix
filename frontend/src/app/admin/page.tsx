@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, Fragment, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import "./admin.css";
 import ImageUpload from "@/components/ImageUpload";
@@ -45,6 +45,42 @@ interface Banner {
 	order: number;
 }
 
+interface OrderItem {
+	id: string;
+	productId: string;
+	sellerId?: string | null;
+	nameSnapshot: string;
+	qty: number;
+	unitPrice: number;
+	subtotal: number;
+}
+
+interface Payment {
+	id: string;
+	status: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+	amount: number;
+	method: string;
+}
+
+interface Order {
+	id: string;
+	status: "NEW" | "CONFIRMED" | "PAID" | "SHIPPED" | "COMPLETED" | "CANCELLED";
+	customerName: string;
+	customerPhone: string;
+	address: string;
+	comment: string;
+	total: number;
+	items: OrderItem[];
+	payment?: Payment | null;
+	createdAt: string;
+}
+
+const ORDER_STATUSES = ["NEW", "CONFIRMED", "PAID", "SHIPPED", "COMPLETED", "CANCELLED"] as const;
+const ORDER_STATUS_LABEL: Record<string, string> = {
+	NEW: "Yangi", CONFIRMED: "Tasdiqlangan", PAID: "To'langan",
+	SHIPPED: "Jo'natilgan", COMPLETED: "Bajarilgan", CANCELLED: "Bekor qilingan",
+};
+
 interface Category {
 	id: string;
 	nameUz: string;
@@ -82,7 +118,7 @@ const LANGS: { key: Lang; label: string; flag: string }[] = [
 export default function AdminPage() {
 	const router = useRouter();
 	const [user, setUser] = useState<{ id: string; email: string; role: string } | null>(null);
-	const [activeTab, setActiveTab] = useState<"products" | "categories" | "banners">("products");
+	const [activeTab, setActiveTab] = useState<"products" | "orders" | "categories" | "banners">("products");
 	const [activeLang, setActiveLang] = useState<Lang>("uz");
 	const [showForm, setShowForm] = useState(false);
 
@@ -113,6 +149,10 @@ export default function AdminPage() {
 	const [bannerSaving, setBannerSaving] = useState(false);
 	const [bannerError, setBannerError] = useState<string | null>(null);
 	const [bannerUploadKey, setBannerUploadKey] = useState(0);
+
+	const [orders, setOrders] = useState<Order[]>([]);
+	const [ordersLoading, setOrdersLoading] = useState(false);
+	const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
 	useEffect(() => {
 		const token = getToken();
@@ -149,8 +189,30 @@ export default function AdminPage() {
 		finally { setBannerLoading(false); }
 	}
 
+	async function loadOrders() {
+		setOrdersLoading(true);
+		try {
+			const res = await fetch(`${API_URL}/orders`, { headers: authHeaders() });
+			if (res.status === 401) { router.push("/login"); return; }
+			setOrders(await res.json());
+		} catch { /* ignore */ }
+		finally { setOrdersLoading(false); }
+	}
+
+	async function handleOrderStatus(id: string, status: string) {
+		await fetch(`${API_URL}/orders/${id}/status`, {
+			method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status }),
+		});
+		await loadOrders();
+	}
+
+	async function handlePaymentConfirm(orderId: string) {
+		await fetch(`${API_URL}/payments/${orderId}/confirm`, { method: "POST", headers: authHeaders() });
+		await loadOrders();
+	}
+
 	useEffect(() => {
-		if (user) { loadProducts(); loadCategories(); loadBanners(); }
+		if (user) { loadProducts(); loadCategories(); loadBanners(); loadOrders(); }
 	}, [user]);
 
 	async function handleBannerAdd(image: string) {
@@ -340,6 +402,13 @@ export default function AdminPage() {
 						>
 							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
 							Mahsulotlar
+						</button>
+						<button
+							className={`adm-nav-item${activeTab === "orders" ? " active" : ""}`}
+							onClick={() => setActiveTab("orders")}
+						>
+							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+							Buyurtmalar
 						</button>
 						{isAdmin && (
 							<button
@@ -585,6 +654,79 @@ export default function AdminPage() {
 													</div>
 												</td>
 											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						)}
+					</>
+				)}
+
+				{/* =================== ORDERS =================== */}
+				{activeTab === "orders" && (
+					<>
+						<div className="adm-toolbar">
+							<div>
+								<h1 className="adm-page-title">Buyurtmalar</h1>
+								<p className="adm-page-sub">{orders.length} ta buyurtma</p>
+							</div>
+						</div>
+
+						{ordersLoading ? (
+							<div className="adm-loading"><div className="adm-spinner" />Yuklanmoqda...</div>
+						) : orders.length === 0 ? (
+							<div className="adm-empty">
+								<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+								<p>Buyurtmalar yo'q</p>
+							</div>
+						) : (
+							<div className="adm-table-wrap">
+								<table className="adm-table">
+									<thead>
+										<tr>
+											<th>#</th><th>Mijoz</th><th>Telefon</th><th>Summa</th><th>To'lov</th><th>Holat</th><th></th>
+										</tr>
+									</thead>
+									<tbody>
+										{orders.map((o) => (
+											<Fragment key={o.id}>
+												<tr>
+													<td><button className="adm-link-btn" onClick={() => setExpandedOrder(expandedOrder === o.id ? null : o.id)}>#{o.id.slice(-6)}</button></td>
+													<td>{o.customerName}</td>
+													<td>{o.customerPhone}</td>
+													<td className="adm-table-price">${o.total}</td>
+													<td>
+														{o.payment?.status === "PAID" ? (
+															<span className="adm-table-badge adm-table-badge-sub">PAID</span>
+														) : isAdmin ? (
+															<button className="adm-link-btn" onClick={() => handlePaymentConfirm(o.id)}>To'lovni tasdiqlash</button>
+														) : <span className="adm-table-badge">PENDING</span>}
+													</td>
+													<td>
+														{isAdmin ? (
+															<select className="adm-status-select" value={o.status} onChange={(e) => handleOrderStatus(o.id, e.target.value)}>
+																{ORDER_STATUSES.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABEL[s]}</option>)}
+															</select>
+														) : <span className="adm-table-badge">{ORDER_STATUS_LABEL[o.status]}</span>}
+													</td>
+													<td><button className="adm-link-btn" onClick={() => setExpandedOrder(expandedOrder === o.id ? null : o.id)}>{expandedOrder === o.id ? "▲" : "▼"}</button></td>
+												</tr>
+												{expandedOrder === o.id && (
+													<tr className="adm-order-detail-row">
+														<td colSpan={7}>
+															<div className="adm-order-detail">
+																{o.address && <div><strong>Manzil:</strong> {o.address}</div>}
+																{o.comment && <div><strong>Izoh:</strong> {o.comment}</div>}
+																<ul className="adm-order-items">
+																	{o.items.map((it) => (
+																		<li key={it.id}>{it.nameSnapshot} — {it.qty} × ${it.unitPrice} = <strong>${it.subtotal}</strong></li>
+																	))}
+																</ul>
+															</div>
+														</td>
+													</tr>
+												)}
+											</Fragment>
 										))}
 									</tbody>
 								</table>

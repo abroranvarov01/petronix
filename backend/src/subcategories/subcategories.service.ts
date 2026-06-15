@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class SubcategoriesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private redis: RedisService) {}
 
   async findAll(categoryId?: string) {
     return this.prisma.subcategory.findMany({
@@ -22,14 +23,20 @@ export class SubcategoriesService {
     order?: number;
     categoryId: string;
   }) {
-    return this.prisma.subcategory.create({ data });
+    const created = await this.prisma.subcategory.create({ data });
+    await this.redis.delPattern('categories:*');
+    return created;
   }
 
   async update(id: string, data: any) {
-    return this.prisma.subcategory.update({ where: { id }, data });
+    const updated = await this.prisma.subcategory.update({ where: { id }, data });
+    await this.redis.delPattern('categories:*');
+    return updated;
   }
 
   async remove(id: string) {
-    return this.prisma.subcategory.delete({ where: { id } });
+    const removed = await this.prisma.subcategory.delete({ where: { id } });
+    await this.redis.delPattern('categories:*');
+    return removed;
   }
 }

@@ -4,11 +4,14 @@ import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { RedisModule } from './redis/redis.module';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
 import { SubcategoriesModule } from './subcategories/subcategories.module';
 import { BannersModule } from './banners/banners.module';
+import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 import { AuthModule } from './auth/auth.module';
 import { UploadModule } from './upload/upload.module';
 import { TelegramModule } from './telegram/telegram.module';
@@ -20,12 +23,15 @@ import { TelegramModule } from './telegram/telegram.module';
       serveRoot: '/uploads',
     }),
     PrismaModule,
+    RedisModule,
     AuthModule,
     UsersModule,
     ProductsModule,
     CategoriesModule,
     SubcategoriesModule,
     BannersModule,
+    OrdersModule,
+    PaymentsModule,
     UploadModule,
     TelegramModule,
   ],

@@ -558,6 +558,35 @@
 .adm-cat-sub-actions { display: flex; gap: 4px; margin-left: auto; }
 .adm-cat-sub-actions .adm-action-btn { width: 28px; height: 28px; }
 
+/* ── Orders ──────────────────────────── */
+.adm-link-btn {
+  background: none;
+  border: none;
+  color: #60a5fa;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0;
+}
+.adm-link-btn:hover { text-decoration: underline; }
+
+.adm-status-select {
+  background: #0b1220;
+  color: #e2eaf4;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.adm-order-detail-row td { background: #0b1220; }
+.adm-order-detail { padding: 10px 6px; font-size: 13px; color: #cbd5e1; display: flex; flex-direction: column; gap: 6px; }
+.adm-order-items { margin: 4px 0 0; padding-left: 18px; }
+.adm-order-items li { margin: 3px 0; }
+
 /* ── Carousel banners ────────────────── */
 .adm-banner-upload {
   max-width: 520px;
