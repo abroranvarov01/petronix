@@ -99,7 +99,6 @@ export default function AdminPage() {
 	const [editingCatId, setEditingCatId] = useState<string | null>(null);
 	const [catSubmitting, setCatSubmitting] = useState(false);
 	const [catError, setCatError] = useState<string | null>(null);
-	const [catPreview, setCatPreview] = useState("");
 	const [catLoading, setCatLoading] = useState(false);
 	const [showCatForm, setShowCatForm] = useState(false);
 
@@ -232,7 +231,6 @@ export default function AdminPage() {
 			const data = await res.json();
 			if (!res.ok) { setCatError(data.message ?? "Xatolik"); return; }
 			setCatForm(EMPTY_CATEGORY);
-			setCatPreview("");
 			setEditingCatId(null);
 			setShowCatForm(false);
 			await loadCategories();
@@ -249,7 +247,6 @@ export default function AdminPage() {
 	function startCatEdit(cat: Category) {
 		setEditingCatId(cat.id);
 		setCatForm({ nameUz: cat.nameUz || "", nameRu: cat.nameRu || "", nameEn: cat.nameEn || "", name: cat.name || "", slug: cat.slug, image: cat.image, order: cat.order });
-		setCatPreview(cat.image);
 		setShowCatForm(true);
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	}
@@ -257,7 +254,6 @@ export default function AdminPage() {
 	function cancelCatEdit() {
 		setEditingCatId(null);
 		setCatForm(EMPTY_CATEGORY);
-		setCatPreview("");
 		setShowCatForm(false);
 	}
 
@@ -607,7 +603,7 @@ export default function AdminPage() {
 							</div>
 							<button
 								className="adm-btn-add"
-								onClick={() => { setShowCatForm(true); setEditingCatId(null); setCatForm(EMPTY_CATEGORY); setCatPreview(""); }}
+								onClick={() => { setShowCatForm(true); setEditingCatId(null); setCatForm(EMPTY_CATEGORY); }}
 							>
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 								Qo'shish
@@ -645,17 +641,6 @@ export default function AdminPage() {
 												<input type="text" placeholder="Masalan: klapanlar" value={catForm.slug}
 													onChange={(e) => setCatForm((p) => ({ ...p, slug: e.target.value }))} required />
 											</div>
-										</div>
-										<div className="adm-field">
-											<label>Tartib raqami</label>
-											<input type="number" value={catForm.order} min={0}
-												onChange={(e) => setCatForm((p) => ({ ...p, order: Number(e.target.value) }))} />
-										</div>
-										<div className="adm-field">
-											<label>Banner rasmi</label>
-											<ImageUpload value={catForm.image}
-												onChange={(path) => { setCatForm((p) => ({ ...p, image: path })); setCatPreview(path); }}
-												onError={(msg) => setCatError(msg)} />
 										</div>
 										{catError && <div className="adm-error">{catError}</div>}
 										<div className="adm-form-actions">
@@ -738,16 +723,9 @@ export default function AdminPage() {
 							<div className="adm-cat-grid">
 								{categories.map((cat) => (
 									<div key={cat.id} className={`adm-cat-card${editingCatId === cat.id ? " is-editing" : ""}`}>
-										{cat.image ? (
-											<img src={imgUrl(cat.image)} alt={cat.name} className="adm-cat-img" />
-										) : (
-											<div className="adm-cat-img-ph">
-												<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-											</div>
-										)}
 										<div className="adm-cat-body">
 											<div className="adm-cat-name">{cat.nameUz || cat.nameRu || cat.nameEn || cat.name}</div>
-											<div className="adm-cat-meta">/{cat.slug} · #{cat.order}</div>
+											<div className="adm-cat-meta">/{cat.slug}</div>
 										</div>
 										<div className="adm-cat-actions">
 											<button className="adm-action-btn edit" onClick={() => startCatEdit(cat)}>
