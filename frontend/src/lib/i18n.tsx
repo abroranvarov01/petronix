@@ -211,6 +211,7 @@ const t = {
   prod_empty:      { uz: "Mahsulotlar topilmadi.", ru: "Товары не найдены.", en: "No products found." },
   prod_order:      { uz: "Buyurtma berish",   ru: "Заказать",           en: "Order" },
   prod_details:    { uz: "Batafsil",          ru: "Подробнее",          en: "Details" },
+  prod_load_more:  { uz: "Yana ko'rsatish",   ru: "Показать ещё",       en: "Load more" },
   prod_add_cart:   { uz: "Savatga qo'shish",  ru: "В корзину",          en: "Add to cart" },
   prod_in_cart:    { uz: "Savatda",           ru: "В корзине",          en: "In cart" },
 

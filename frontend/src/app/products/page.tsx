@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { API_URL, imgUrl } from "@/lib/api";
@@ -120,40 +120,70 @@ function CatalogPage() {
 	const { lang } = useLang();
 	const t = useT();
 
-	const [products, setProducts] = useState<Product[]>([]);
+	const PAGE_SIZE = 24;
+
+	const [items, setItems] = useState<Product[]>([]);
+	const [total, setTotal] = useState(0);
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [loadingMore, setLoadingMore] = useState(false);
 
 	const [selectedType, setSelectedType] = useState<string | null>(searchParams.get("type"));
 	const [selectedSubtype, setSelectedSubtype] = useState<string | null>(searchParams.get("subtype"));
-	const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+	const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
+	const [search, setSearch] = useState(searchInput.trim());
 
+	// Categories (sidebar) — loaded once.
 	useEffect(() => {
-		Promise.all([
-			fetch(`${API_URL}/products`).then((r) => r.json()),
-			fetch(`${API_URL}/categories`).then((r) => r.json()),
-		])
-			.then(([prods, cats]) => { setProducts(prods); setCategories(cats); })
-			.finally(() => setLoading(false));
+		fetch(`${API_URL}/categories`)
+			.then((r) => r.json())
+			.then((cats) => setCategories(Array.isArray(cats) ? cats : []))
+			.catch(() => {});
 	}, []);
 
+	// Sync filters from the URL (e.g. when arriving from a banner link).
 	useEffect(() => {
 		setSelectedType(searchParams.get("type"));
 		setSelectedSubtype(searchParams.get("subtype"));
-		setSearchQuery(searchParams.get("q") || "");
+		setSearchInput(searchParams.get("q") || "");
 	}, [searchParams]);
 
-	const filtered = useMemo(() => {
-		return products.filter((p) => {
-			const typeOk = !selectedType || p.type === selectedType;
-			const subtypeOk = !selectedSubtype || p.subtype === selectedSubtype;
-			const q = searchQuery.toLowerCase();
-			const searchOk = !q ||
-				getName(p, lang).toLowerCase().includes(q) ||
-				getDesc(p, lang).toLowerCase().includes(q);
-			return typeOk && subtypeOk && searchOk;
-		});
-	}, [products, selectedType, selectedSubtype, searchQuery, lang]);
+	// Debounce the search box so we don't hit the API on every keystroke.
+	useEffect(() => {
+		const id = setTimeout(() => setSearch(searchInput.trim()), 350);
+		return () => clearTimeout(id);
+	}, [searchInput]);
+
+	function buildQuery(page: number) {
+		const p = new URLSearchParams();
+		if (selectedType) p.set("type", selectedType);
+		if (selectedSubtype) p.set("subtype", selectedSubtype);
+		if (search) p.set("q", search);
+		p.set("page", String(page));
+		p.set("limit", String(PAGE_SIZE));
+		return p.toString();
+	}
+
+	// Fetch page 1 whenever filters/search change (server-side filtering).
+	useEffect(() => {
+		setLoading(true);
+		fetch(`${API_URL}/products?${buildQuery(1)}`)
+			.then((r) => r.json())
+			.then((d) => { setItems(d.items ?? []); setTotal(d.total ?? 0); })
+			.catch(() => { setItems([]); setTotal(0); })
+			.finally(() => setLoading(false));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [selectedType, selectedSubtype, search]);
+
+	function loadMore() {
+		const nextPage = Math.floor(items.length / PAGE_SIZE) + 1;
+		setLoadingMore(true);
+		fetch(`${API_URL}/products?${buildQuery(nextPage)}`)
+			.then((r) => r.json())
+			.then((d) => setItems((prev) => [...prev, ...(d.items ?? [])]))
+			.catch(() => {})
+			.finally(() => setLoadingMore(false));
+	}
 
 	const activeCategory = categories.find((c) => c.slug === selectedType);
 	const activeSubcategory = activeCategory?.subcategories?.find((s) => s.slug === selectedSubtype);
@@ -235,8 +265,8 @@ function CatalogPage() {
 							type="text"
 							className="catalog-search-input"
 							placeholder={t("prod_search")}
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
+							value={searchInput}
+							onChange={(e) => setSearchInput(e.target.value)}
 						/>
 					</div>
 
@@ -244,10 +274,10 @@ function CatalogPage() {
 					<div className="catalog-grid">
 						{loading ? (
 							<p className="catalog-status">{t("prod_loading")}</p>
-						) : filtered.length === 0 ? (
+						) : items.length === 0 ? (
 							<p className="catalog-status">{t("prod_empty")}</p>
 						) : (
-							filtered.map((p) => (
+							items.map((p) => (
 								<ProductCard
 									key={p.id}
 									product={p}
@@ -257,6 +287,15 @@ function CatalogPage() {
 							))
 						)}
 					</div>
+
+					{!loading && items.length < total && (
+						<div className="catalog-loadmore-row">
+							<button className="catalog-loadmore" onClick={loadMore} disabled={loadingMore}>
+								{loadingMore ? t("prod_loading") : t("prod_load_more")}
+							</button>
+							<span className="catalog-count">{items.length} / {total}</span>
+						</div>
+					)}
 				</main>
 			</div>
 		</>

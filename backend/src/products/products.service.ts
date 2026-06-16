@@ -5,34 +5,62 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  // Публичный список — без costPrice и wholesalePrice
-  async findAllPublic(type?: string, subtype?: string) {
-    const where = {
-      ...(type ? { type } : {}),
-      ...(subtype ? { subtype } : {}),
+  // Публичный список — без costPrice и wholesalePrice.
+  // Серверный фильтр (type/subtype), поиск (q) и пагинация.
+  async findAllPublic(params: {
+    type?: string;
+    subtype?: string;
+    q?: string;
+    page?: number | string;
+    limit?: number | string;
+  }) {
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.min(60, Math.max(1, Number(params.limit) || 24));
+    const skip = (page - 1) * limit;
+    const q = (params.q ?? '').trim();
+
+    const where: any = {
+      ...(params.type ? { type: params.type } : {}),
+      ...(params.subtype ? { subtype: params.subtype } : {}),
+      ...(q
+        ? {
+            OR: [
+              { nameUz: { contains: q, mode: 'insensitive' } },
+              { nameRu: { contains: q, mode: 'insensitive' } },
+              { nameEn: { contains: q, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
     };
-    const products = await this.prisma.product.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        nameUz: true,
-        nameRu: true,
-        nameEn: true,
-        descriptionUz: true,
-        descriptionRu: true,
-        descriptionEn: true,
-        brand: true,
-        type: true,
-        subtype: true,
-        image: true,
-        sellPrice: true,
-        owner: { select: { id: true, name: true } },
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-    return products;
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.product.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          nameUz: true,
+          nameRu: true,
+          nameEn: true,
+          descriptionUz: true,
+          descriptionRu: true,
+          descriptionEn: true,
+          brand: true,
+          type: true,
+          subtype: true,
+          image: true,
+          sellPrice: true,
+          owner: { select: { id: true, name: true } },
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return { items, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
   // Публичный один товар
