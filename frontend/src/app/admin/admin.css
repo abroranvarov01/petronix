@@ -558,6 +558,25 @@
 .adm-cat-sub-actions { display: flex; gap: 4px; margin-left: auto; }
 .adm-cat-sub-actions .adm-action-btn { width: 28px; height: 28px; }
 
+/* ── Reports ─────────────────────────── */
+.adm-rep-controls { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.adm-rep-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.adm-rep-tab {
+  padding: 8px 16px; border-radius: 9px; border: 1px solid #1e293b;
+  background: #0b1220; color: #94a3b8; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.adm-rep-tab:hover { color: #e2eaf4; }
+.adm-rep-tab.active { background: #16a34a; border-color: #16a34a; color: #fff; }
+.adm-rep-dates { display: flex; align-items: center; gap: 8px; }
+.adm-rep-dates input, .adm-rep-dates select {
+  padding: 8px 10px; border-radius: 8px; border: 1px solid #334155;
+  background: #0b1220; color: #e2eaf4; font-family: inherit; font-size: 13px;
+}
+.adm-rep-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.adm-rep-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.adm-rep-card span { font-size: 12px; color: #64748b; }
+.adm-rep-card strong { font-size: 22px; color: #e2eaf4; }
+
 /* ── Warehouse ───────────────────────── */
 .adm-section-title { font-size: 16px; font-weight: 700; color: #e2eaf4; margin: 28px 0 12px; }
 .adm-muted { color: #64748b; }

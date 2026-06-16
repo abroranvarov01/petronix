@@ -15,6 +15,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { WarehouseModule } from './warehouse/warehouse.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { SuppliesModule } from './supplies/supplies.module';
+import { ReportsModule } from './reports/reports.module';
 import { AuthModule } from './auth/auth.module';
 import { UploadModule } from './upload/upload.module';
 import { TelegramModule } from './telegram/telegram.module';
@@ -38,6 +39,7 @@ import { TelegramModule } from './telegram/telegram.module';
     WarehouseModule,
     SuppliersModule,
     SuppliesModule,
+    ReportsModule,
     UploadModule,
     TelegramModule,
   ],
