@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { OrdersService } from './orders.service';
+import { CheckoutDto, UpdateOrderStatusDto } from './dto/checkout.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -12,7 +13,7 @@ export class OrdersController {
   // Public — guest checkout (rate-limited against spam/abuse)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @Post()
-  create(@Body() body: any) {
+  create(@Body() body: CheckoutDto) {
     return this.ordersService.create(body);
   }
 
@@ -31,7 +32,7 @@ export class OrdersController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Patch(':id/status')
-  updateStatus(@Req() req: any, @Param('id') id: string, @Body() body: { status: any }) {
-    return this.ordersService.updateStatus(id, body.status, req.user);
+  updateStatus(@Req() req: any, @Param('id') id: string, @Body() body: UpdateOrderStatusDto) {
+    return this.ordersService.updateStatus(id, body.status as any, req.user);
   }
 }
