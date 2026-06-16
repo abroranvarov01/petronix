@@ -29,6 +29,20 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum MovementType {
+  RECEIPT
+  SALE
+  WRITE_OFF
+  TRANSFER_IN
+  TRANSFER_OUT
+  ADJUSTMENT
+}
+
+enum SupplyStatus {
+  DRAFT
+  POSTED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -95,6 +109,9 @@ model Product {
   ownerId        String?
   owner          User?    @relation(fields: [ownerId], references: [id])
   orderItems     OrderItem[]
+  stocks         Stock[]
+  movements      StockMovement[]
+  supplyItems    SupplyItem[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -108,6 +125,7 @@ model Order {
   comment       String      @default("")
   userId        String?
   total         Float       @default(0)
+  stockPosted   Boolean     @default(false)
   items         OrderItem[]
   payment       Payment?
   createdAt     DateTime    @default(now())
@@ -145,4 +163,87 @@ model Payment {
   providerRef String        @default("")
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+}
+
+model Warehouse {
+  id        String          @id @default(cuid())
+  name      String
+  isDefault Boolean         @default(false)
+  createdAt DateTime        @default(now())
+  stocks    Stock[]
+  movements StockMovement[]
+  supplies  Supply[]
+}
+
+model Stock {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  quantity    Int       @default(0)
+  minQuantity Int       @default(0)
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([productId, warehouseId])
+  @@index([warehouseId])
+}
+
+model StockMovement {
+  id          String       @id @default(cuid())
+  productId   String
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseId String
+  warehouse   Warehouse    @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  type        MovementType
+  qty         Int
+  unitCost    Float        @default(0)
+  reason      String       @default("")
+  refType     String       @default("")
+  refId       String       @default("")
+  userId      String?
+  createdAt   DateTime     @default(now())
+
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @default("")
+  note      String   @default("")
+  createdAt DateTime @default(now())
+  supplies  Supply[]
+}
+
+model Supply {
+  id          String       @id @default(cuid())
+  supplierId  String?
+  supplier    Supplier?    @relation(fields: [supplierId], references: [id])
+  warehouseId String
+  warehouse   Warehouse    @relation(fields: [warehouseId], references: [id])
+  status      SupplyStatus @default(DRAFT)
+  total       Float        @default(0)
+  items       SupplyItem[]
+  createdAt   DateTime     @default(now())
+  postedAt    DateTime?
+
+  @@index([supplierId])
+  @@index([warehouseId])
+}
+
+model SupplyItem {
+  id        String  @id @default(cuid())
+  supplyId  String
+  supply    Supply  @relation(fields: [supplyId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  qty       Int
+  unitCost  Float   @default(0)
+
+  @@index([supplyId])
+  @@index([productId])
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -18,7 +18,7 @@ export class PaymentsController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Post(':orderId/confirm')
-  confirm(@Param('orderId') orderId: string, @Body() body: { method?: string }) {
-    return this.paymentsService.confirm(orderId, body?.method);
+  confirm(@Req() req: any, @Param('orderId') orderId: string, @Body() body: { method?: string }) {
+    return this.paymentsService.confirm(orderId, body?.method, req.user?.sub);
   }
 }

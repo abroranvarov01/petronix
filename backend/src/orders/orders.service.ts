@@ -1,5 +1,9 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { WarehouseService } from '../warehouse/warehouse.service';
+
+// Statuses at which stock is considered consumed (sale posted)
+const SOLD_STATUSES: OrderStatus[] = ['CONFIRMED', 'PAID', 'SHIPPED', 'COMPLETED'];
 
 type OrderStatus = 'NEW' | 'CONFIRMED' | 'PAID' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED';
 
@@ -18,7 +22,7 @@ interface CheckoutDto {
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private warehouse: WarehouseService) {}
 
   async create(dto: CheckoutDto) {
     if (!dto.customerName || !dto.customerPhone) {
@@ -98,22 +102,41 @@ export class OrdersService {
 
   async updateStatus(id: string, status: OrderStatus, user: { sub: string; role: string }) {
     if (user.role !== 'ADMIN') throw new ForbiddenException('Faqat admin');
-    const order = await this.prisma.order.findUnique({ where: { id }, include: { payment: true } });
+    return this.transition(id, status, user.sub);
+  }
+
+  /**
+   * Core status transition (no role check — callers guard access).
+   * Posts stock SALE movements the first time an order reaches a "sold"
+   * status, and reverses them if the order is later cancelled. `stockPosted`
+   * guards against double-posting.
+   */
+  async transition(id: string, status: OrderStatus, userId?: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { items: true, payment: true },
+    });
     if (!order) throw new NotFoundException('Buyurtma topilmadi');
 
     const updated = await this.prisma.order.update({
       where: { id },
       data: {
         status,
-        // Keep payment in sync when an order is marked paid
-        ...(status === 'PAID' && order.payment
-          ? { payment: { update: { status: 'PAID' } } }
-          : {}),
+        ...(status === 'PAID' && order.payment ? { payment: { update: { status: 'PAID' } } } : {}),
       },
       include: { items: true, payment: true },
     });
 
-    // NOTE: Фаза 2 — on CONFIRMED/PAID enqueue stock SALE movements; on CANCELLED reverse.
+    if (SOLD_STATUSES.includes(status) && !order.stockPosted) {
+      await this.warehouse.postOrderSale({ id: order.id, items: order.items }, userId);
+      await this.prisma.order.update({ where: { id }, data: { stockPosted: true } });
+      updated.stockPosted = true;
+    } else if (status === 'CANCELLED' && order.stockPosted) {
+      await this.warehouse.reverseOrderSale({ id: order.id, items: order.items }, userId);
+      await this.prisma.order.update({ where: { id }, data: { stockPosted: false } });
+      updated.stockPosted = false;
+    }
+
     return updated;
   }
 

@@ -12,6 +12,9 @@ import { SubcategoriesModule } from './subcategories/subcategories.module';
 import { BannersModule } from './banners/banners.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { WarehouseModule } from './warehouse/warehouse.module';
+import { SuppliersModule } from './suppliers/suppliers.module';
+import { SuppliesModule } from './supplies/supplies.module';
 import { AuthModule } from './auth/auth.module';
 import { UploadModule } from './upload/upload.module';
 import { TelegramModule } from './telegram/telegram.module';
@@ -32,6 +35,9 @@ import { TelegramModule } from './telegram/telegram.module';
     BannersModule,
     OrdersModule,
     PaymentsModule,
+    WarehouseModule,
+    SuppliersModule,
+    SuppliesModule,
     UploadModule,
     TelegramModule,
   ],

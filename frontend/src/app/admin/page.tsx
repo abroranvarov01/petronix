@@ -75,6 +75,37 @@ interface Order {
 	createdAt: string;
 }
 
+interface StockRow {
+	id: string;
+	productId: string;
+	quantity: number;
+	minQuantity: number;
+	product: { id: string; nameUz: string; nameRu: string; nameEn: string; unit: string; costPrice: number; ownerId?: string };
+	warehouse: { id: string; name: string };
+}
+
+interface Movement {
+	id: string;
+	type: "RECEIPT" | "SALE" | "WRITE_OFF" | "TRANSFER_IN" | "TRANSFER_OUT" | "ADJUSTMENT";
+	qty: number;
+	unitCost: number;
+	reason: string;
+	createdAt: string;
+	product: { nameUz: string; nameRu: string; nameEn: string };
+}
+
+interface Supplier {
+	id: string;
+	name: string;
+	phone: string;
+	note: string;
+}
+
+const MOVEMENT_LABEL: Record<string, string> = {
+	RECEIPT: "Kirim", SALE: "Sotuv", WRITE_OFF: "Hisobdan chiqarish",
+	TRANSFER_IN: "Ko'chirish (+)", TRANSFER_OUT: "Ko'chirish (−)", ADJUSTMENT: "Tuzatish",
+};
+
 const ORDER_STATUSES = ["NEW", "CONFIRMED", "PAID", "SHIPPED", "COMPLETED", "CANCELLED"] as const;
 const ORDER_STATUS_LABEL: Record<string, string> = {
 	NEW: "Yangi", CONFIRMED: "Tasdiqlangan", PAID: "To'langan",
@@ -118,7 +149,7 @@ const LANGS: { key: Lang; label: string; flag: string }[] = [
 export default function AdminPage() {
 	const router = useRouter();
 	const [user, setUser] = useState<{ id: string; email: string; role: string } | null>(null);
-	const [activeTab, setActiveTab] = useState<"products" | "orders" | "categories" | "banners">("products");
+	const [activeTab, setActiveTab] = useState<"products" | "orders" | "warehouse" | "categories" | "banners">("products");
 	const [activeLang, setActiveLang] = useState<Lang>("uz");
 	const [showForm, setShowForm] = useState(false);
 
@@ -153,6 +184,16 @@ export default function AdminPage() {
 	const [orders, setOrders] = useState<Order[]>([]);
 	const [ordersLoading, setOrdersLoading] = useState(false);
 	const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+	const [stock, setStock] = useState<StockRow[]>([]);
+	const [movements, setMovements] = useState<Movement[]>([]);
+	const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+	const [whLoading, setWhLoading] = useState(false);
+	const [showSupplyForm, setShowSupplyForm] = useState(false);
+	const [supplyForm, setSupplyForm] = useState<{ supplierId: string; items: { productId: string; qty: number; unitCost: number }[] }>({ supplierId: "", items: [{ productId: "", qty: 1, unitCost: 0 }] });
+	const [supplySaving, setSupplySaving] = useState(false);
+	const [showSupplierForm, setShowSupplierForm] = useState(false);
+	const [supplierForm, setSupplierForm] = useState({ name: "", phone: "", note: "" });
 
 	useEffect(() => {
 		const token = getToken();
@@ -211,8 +252,73 @@ export default function AdminPage() {
 		await loadOrders();
 	}
 
+	async function loadWarehouse() {
+		setWhLoading(true);
+		try {
+			const [s, m] = await Promise.all([
+				fetch(`${API_URL}/warehouse/stock`, { headers: authHeaders() }).then((r) => r.json()),
+				fetch(`${API_URL}/warehouse/movements`, { headers: authHeaders() }).then((r) => r.json()),
+			]);
+			setStock(Array.isArray(s) ? s : []);
+			setMovements(Array.isArray(m) ? m : []);
+			if (isAdmin) {
+				const sup = await fetch(`${API_URL}/suppliers`, { headers: authHeaders() }).then((r) => r.json());
+				setSuppliers(Array.isArray(sup) ? sup : []);
+			}
+		} catch { /* ignore */ }
+		finally { setWhLoading(false); }
+	}
+
+	async function handleSupplySubmit(e: FormEvent) {
+		e.preventDefault();
+		setSupplySaving(true);
+		try {
+			const items = supplyForm.items.filter((i) => i.productId && i.qty > 0);
+			if (items.length === 0) { setSupplySaving(false); return; }
+			const created = await fetch(`${API_URL}/supplies`, {
+				method: "POST", headers: authHeaders(),
+				body: JSON.stringify({ supplierId: supplyForm.supplierId || undefined, items }),
+			}).then((r) => r.json());
+			await fetch(`${API_URL}/supplies/${created.id}/post`, { method: "POST", headers: authHeaders() });
+			setShowSupplyForm(false);
+			setSupplyForm({ supplierId: "", items: [{ productId: "", qty: 1, unitCost: 0 }] });
+			await loadWarehouse();
+		} catch { /* ignore */ }
+		finally { setSupplySaving(false); }
+	}
+
+	async function handleSupplierSubmit(e: FormEvent) {
+		e.preventDefault();
+		await fetch(`${API_URL}/suppliers`, { method: "POST", headers: authHeaders(), body: JSON.stringify(supplierForm) });
+		setSupplierForm({ name: "", phone: "", note: "" });
+		setShowSupplierForm(false);
+		await loadWarehouse();
+	}
+
+	async function handleWriteOff(productId: string) {
+		const qty = Number(prompt("Hisobdan chiqarish miqdori:"));
+		if (!qty || qty <= 0) return;
+		await fetch(`${API_URL}/warehouse/write-off`, {
+			method: "POST", headers: authHeaders(),
+			body: JSON.stringify({ productId, qty, reason: "Qo'lda hisobdan chiqarish" }),
+		});
+		await loadWarehouse();
+	}
+
+	async function handleAdjust(productId: string, current: number) {
+		const v = prompt("Yangi qoldiq (aniq son):", String(current));
+		if (v === null) return;
+		const quantity = Number(v);
+		if (Number.isNaN(quantity)) return;
+		await fetch(`${API_URL}/warehouse/adjust`, {
+			method: "POST", headers: authHeaders(),
+			body: JSON.stringify({ productId, quantity, reason: "Qo'lda tuzatish" }),
+		});
+		await loadWarehouse();
+	}
+
 	useEffect(() => {
-		if (user) { loadProducts(); loadCategories(); loadBanners(); loadOrders(); }
+		if (user) { loadProducts(); loadCategories(); loadBanners(); loadOrders(); loadWarehouse(); }
 	}, [user]);
 
 	async function handleBannerAdd(image: string) {
@@ -409,6 +515,13 @@ export default function AdminPage() {
 						>
 							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
 							Buyurtmalar
+						</button>
+						<button
+							className={`adm-nav-item${activeTab === "warehouse" ? " active" : ""}`}
+							onClick={() => setActiveTab("warehouse")}
+						>
+							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21V8l9-5 9 5v13"/><path d="M3 21h18"/><rect x="7" y="13" width="10" height="8"/></svg>
+							Ombor
 						</button>
 						{isAdmin && (
 							<button
@@ -731,6 +844,132 @@ export default function AdminPage() {
 									</tbody>
 								</table>
 							</div>
+						)}
+					</>
+				)}
+
+				{/* =================== WAREHOUSE =================== */}
+				{activeTab === "warehouse" && (
+					<>
+						<div className="adm-toolbar">
+							<div>
+								<h1 className="adm-page-title">Ombor</h1>
+								<p className="adm-page-sub">{stock.length} ta pozitsiya</p>
+							</div>
+							{isAdmin && (
+								<div className="adm-toolbar-actions">
+									<button className="adm-btn-add" onClick={() => setShowSupplierForm(true)}>+ Yetkazib beruvchi</button>
+									<button className="adm-btn-add" onClick={() => setShowSupplyForm(true)}>+ Kirim (приход)</button>
+								</div>
+							)}
+						</div>
+
+						{/* Supplier modal */}
+						{showSupplierForm && isAdmin && (
+							<div className="adm-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowSupplierForm(false); }}>
+								<div className="adm-modal adm-modal-sm">
+									<div className="adm-modal-header"><h2>Yangi yetkazib beruvchi</h2>
+										<button className="adm-modal-close" onClick={() => setShowSupplierForm(false)}>✕</button></div>
+									<form className="adm-form" onSubmit={handleSupplierSubmit}>
+										<div className="adm-field"><label>Nomi</label>
+											<input value={supplierForm.name} required onChange={(e) => setSupplierForm((p) => ({ ...p, name: e.target.value }))} /></div>
+										<div className="adm-field"><label>Telefon</label>
+											<input value={supplierForm.phone} onChange={(e) => setSupplierForm((p) => ({ ...p, phone: e.target.value }))} /></div>
+										<div className="adm-form-actions">
+											<button type="button" className="adm-btn-cancel" onClick={() => setShowSupplierForm(false)}>Bekor</button>
+											<button type="submit" className="adm-btn-save">Saqlash</button>
+										</div>
+									</form>
+								</div>
+							</div>
+						)}
+
+						{/* Supply (receipt) modal */}
+						{showSupplyForm && isAdmin && (
+							<div className="adm-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowSupplyForm(false); }}>
+								<div className="adm-modal">
+									<div className="adm-modal-header"><h2>Kirim (приход)</h2>
+										<button className="adm-modal-close" onClick={() => setShowSupplyForm(false)}>✕</button></div>
+									<form className="adm-form" onSubmit={handleSupplySubmit}>
+										<div className="adm-field"><label>Yetkazib beruvchi</label>
+											<select value={supplyForm.supplierId} onChange={(e) => setSupplyForm((p) => ({ ...p, supplierId: e.target.value }))}>
+												<option value="">— ixtiyoriy —</option>
+												{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+											</select>
+										</div>
+										{supplyForm.items.map((it, idx) => (
+											<div className="adm-supply-row" key={idx}>
+												<select value={it.productId} onChange={(e) => setSupplyForm((p) => { const items = [...p.items]; items[idx] = { ...items[idx], productId: e.target.value }; return { ...p, items }; })} required>
+													<option value="">— mahsulot —</option>
+													{products.map((pr) => <option key={pr.id} value={pr.id}>{pr.nameUz || pr.nameRu || pr.nameEn}</option>)}
+												</select>
+												<input type="number" min={1} placeholder="Soni" value={it.qty} onChange={(e) => setSupplyForm((p) => { const items = [...p.items]; items[idx] = { ...items[idx], qty: Number(e.target.value) }; return { ...p, items }; })} />
+												<input type="number" step="0.01" min={0} placeholder="Tannarx $" value={it.unitCost} onChange={(e) => setSupplyForm((p) => { const items = [...p.items]; items[idx] = { ...items[idx], unitCost: Number(e.target.value) }; return { ...p, items }; })} />
+												<button type="button" className="adm-action-btn delete" onClick={() => setSupplyForm((p) => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))}>✕</button>
+											</div>
+										))}
+										<button type="button" className="adm-link-btn" onClick={() => setSupplyForm((p) => ({ ...p, items: [...p.items, { productId: "", qty: 1, unitCost: 0 }] }))}>+ Pozitsiya qo'shish</button>
+										<div className="adm-form-actions">
+											<button type="button" className="adm-btn-cancel" onClick={() => setShowSupplyForm(false)}>Bekor</button>
+											<button type="submit" className="adm-btn-save" disabled={supplySaving}>{supplySaving ? "..." : "Kirim qilish"}</button>
+										</div>
+									</form>
+								</div>
+							</div>
+						)}
+
+						{whLoading ? (
+							<div className="adm-loading"><div className="adm-spinner" />Yuklanmoqda...</div>
+						) : (
+							<>
+								{/* Stock table */}
+								<div className="adm-table-wrap">
+									<table className="adm-table">
+										<thead><tr><th>Mahsulot</th><th>Qoldiq</th><th>Min</th><th>Qiymat</th>{isAdmin && <th></th>}</tr></thead>
+										<tbody>
+											{stock.length === 0 ? (
+												<tr><td colSpan={isAdmin ? 5 : 4} className="adm-muted">Qoldiqlar yo'q</td></tr>
+											) : stock.map((s) => (
+												<tr key={s.id} className={s.minQuantity > 0 && s.quantity <= s.minQuantity ? "adm-low" : ""}>
+													<td>{s.product.nameUz || s.product.nameRu || s.product.nameEn}</td>
+													<td className="adm-table-price">{s.quantity} {s.product.unit}</td>
+													<td className="adm-muted">{s.minQuantity || "—"}</td>
+													<td>${(s.quantity * s.product.costPrice).toFixed(2)}</td>
+													{isAdmin && (
+														<td>
+															<div className="adm-table-actions">
+																<button className="adm-link-btn" onClick={() => handleAdjust(s.productId, s.quantity)}>Tuzatish</button>
+																<button className="adm-link-btn adm-danger" onClick={() => handleWriteOff(s.productId)}>Chiqarish</button>
+															</div>
+														</td>
+													)}
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+
+								{/* Movements */}
+								<h3 className="adm-section-title">Harakatlar tarixi</h3>
+								<div className="adm-table-wrap">
+									<table className="adm-table">
+										<thead><tr><th>Sana</th><th>Mahsulot</th><th>Turi</th><th>Soni</th><th>Sabab</th></tr></thead>
+										<tbody>
+											{movements.length === 0 ? (
+												<tr><td colSpan={5} className="adm-muted">Harakatlar yo'q</td></tr>
+											) : movements.map((m) => (
+												<tr key={m.id}>
+													<td className="adm-muted">{new Date(m.createdAt).toLocaleDateString()}</td>
+													<td>{m.product.nameUz || m.product.nameRu || m.product.nameEn}</td>
+													<td><span className="adm-table-badge">{MOVEMENT_LABEL[m.type]}</span></td>
+													<td className={m.qty < 0 ? "adm-danger" : "adm-table-price"}>{m.qty > 0 ? "+" : ""}{m.qty}</td>
+													<td className="adm-muted">{m.reason}</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+							</>
 						)}
 					</>
 				)}

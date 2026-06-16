@@ -558,6 +558,24 @@
 .adm-cat-sub-actions { display: flex; gap: 4px; margin-left: auto; }
 .adm-cat-sub-actions .adm-action-btn { width: 28px; height: 28px; }
 
+/* ── Warehouse ───────────────────────── */
+.adm-section-title { font-size: 16px; font-weight: 700; color: #e2eaf4; margin: 28px 0 12px; }
+.adm-muted { color: #64748b; }
+.adm-danger { color: #f87171; font-weight: 600; }
+.adm-link-btn.adm-danger { color: #f87171; }
+.adm-low td { background: #1f0a0a55; }
+.adm-supply-row {
+  display: grid;
+  grid-template-columns: 1fr 90px 110px 32px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.adm-supply-row select, .adm-supply-row input {
+  width: 100%; padding: 8px 10px; border-radius: 8px;
+  border: 1px solid #334155; background: #0b1220; color: #e2eaf4; font-family: inherit;
+}
+
 /* ── Orders ──────────────────────────── */
 .adm-link-btn {
   background: none;
