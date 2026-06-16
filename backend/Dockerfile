@@ -17,4 +17,8 @@ RUN mkdir -p uploads && chown -R node:node /app
 USER node
 
 EXPOSE 3001
-CMD ["sh", "-c", "npx prisma db push --url \"$DATABASE_URL\" && npm run start:prod"]
+# Apply versioned migrations on start (replaces the old `db push`).
+# First-time cutover for a DB that previously used `db push` — run ONCE before
+# deploying this image (tables already exist, so just baseline the history):
+#   docker compose ... run --rm backend npx prisma migrate resolve --applied 20260616082740_baseline
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
