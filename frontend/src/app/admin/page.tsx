@@ -1032,7 +1032,7 @@ export default function AdminPage() {
 						<div className="adm-rep-controls">
 							<div className="adm-rep-tabs">
 								{([["sales", "Sotuvlar"], ["stock", "Qoldiqlar"], ["profit", "Foyda"], ["turnover", "Aylanma"]] as const).map(([k, label]) => (
-									<button key={k} className={`adm-rep-tab${reportType === k ? " active" : ""}`} onClick={() => setReportType(k)}>{label}</button>
+									<button key={k} className={`adm-rep-tab${reportType === k ? " active" : ""}`} onClick={() => { setReportType(k); setReportData(null); setReportLoading(true); }}>{label}</button>
 								))}
 							</div>
 							{reportType !== "stock" && (

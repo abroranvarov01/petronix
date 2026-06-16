@@ -1,0 +1,176 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><style>
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: #1e293b; line-height: 1.6; font-size: 13px; margin: 0; }
+  h1 { font-size: 26px; color: #0f172a; border-bottom: 3px solid #16a34a; padding-bottom: 10px; margin: 0 0 18px; }
+  h2 { font-size: 19px; color: #15803d; margin: 26px 0 10px; padding-top: 6px; border-top: 1px solid #e2e8f0; }
+  h3 { font-size: 15px; color: #0f172a; margin: 18px 0 6px; }
+  p { margin: 8px 0; }
+  a { color: #16a34a; text-decoration: none; }
+  ul { margin: 8px 0; padding-left: 20px; }
+  li { margin: 4px 0; }
+  blockquote { margin: 12px 0; padding: 8px 14px; background: #f0fdf4; border-left: 4px solid #16a34a; color: #334155; border-radius: 0 6px 6px 0; }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-family: "Consolas", monospace; font-size: 12px; color: #be123c; }
+  img { max-width: 100%; height: auto; border: 1px solid #cbd5e1; border-radius: 8px; margin: 10px 0 16px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 12px; }
+  th, td { border: 1px solid #cbd5e1; padding: 7px 10px; text-align: left; }
+  th { background: #16a34a; color: #fff; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  h2, h3 { break-after: avoid; }
+  img { break-inside: avoid; }
+  blockquote, table { break-inside: avoid; }
+</style></head><body><h1>Petronix — Руководство пользователя</h1>
+<p>Руководство по платформе. Разделено по ролям:</p>
+<ul>
+<li><strong><a href="#%D1%87%D0%B0%D1%81%D1%82%D1%8C-1--%D0%B4%D0%BB%D1%8F-%D0%BA%D0%BB%D0%B8%D0%B5%D0%BD%D1%82%D0%BE%D0%B2-%D0%BF%D0%BE%D0%BA%D1%83%D0%BF%D0%B0%D1%82%D0%B5%D0%BB%D0%B5%D0%B9">Часть 1. Для клиентов (покупателей)</a></strong> — каталог, корзина, оформление заказа, язык.</li>
+<li><strong><a href="#%D1%87%D0%B0%D1%81%D1%82%D1%8C-2--%D0%B4%D0%BB%D1%8F-%D0%BF%D1%80%D0%BE%D0%B4%D0%B0%D0%B2%D1%86%D0%BE%D0%B2-%D0%B4%D0%B8%D0%BB%D0%B5%D1%80%D0%BE%D0%B2">Часть 2. Для продавцов (дилеров)</a></strong> — регистрация, вход, свои товары, свои заказы, склад.</li>
+<li><strong><a href="#%D1%87%D0%B0%D1%81%D1%82%D1%8C-3--%D0%B4%D0%BB%D1%8F-%D0%B0%D0%B4%D0%BC%D0%B8%D0%BD%D0%B8%D1%81%D1%82%D1%80%D0%B0%D1%82%D0%BE%D1%80%D0%B0">Часть 3. Для администратора</a></strong> — заказы, склад, отчёты, каталог, карусель.</li>
+</ul>
+<blockquote>
+<p>Теперь продажи идут <strong>внутри платформы</strong>: клиент собирает корзину и оформляет заказ на сайте, заказ попадает в админку. Telegram остаётся только для уведомлений и формы заявки на лендинге.</p>
+</blockquote>
+<hr>
+<h2>Часть 1 — Для клиентов (покупателей)</h2>
+<h3>1.1. Главная и карусель</h3>
+<p>На главной — слайдер с баннерами (стрелки по бокам, точки снизу, автопрокрутка).</p>
+<p><img src="screenshots/01-home-carousel.png" alt="Карусель на главной"></p>
+<h3>1.2. Переключение языка</h3>
+<p>В правом верхнем углу — переключатель с флагами: <strong>🇺🇿 O&#39;zbek</strong>, <strong>🇷🇺 Русский</strong>, <strong>🇬🇧 English</strong>. Весь сайт переключается сразу, выбор запоминается.</p>
+<p><img src="screenshots/02-lang-switcher.png" alt="Переключатель языка"></p>
+<h3>1.3. Каталог: фильтр и поиск</h3>
+<p>Раздел <strong>Mahsulotlar / Товары</strong> (<code>/products</code>). Слева — категории; при выборе категории раскрываются её подкатегории. Над списком — поиск по названию. Фильтр и поиск работают на сервере, товары подгружаются кнопкой <strong>«Показать ещё»</strong>.</p>
+<p><img src="screenshots/03-catalog-subcategories.png" alt="Каталог с подкатегориями"></p>
+<p><img src="screenshots/10-catalog-search.png" alt="Поиск товара"></p>
+<h3>1.4. Корзина и оформление заказа</h3>
+<p>Кнопка <strong>«Savatga qo&#39;shish / В корзину»</strong> на карточке товара добавляет его в корзину (счётчик — в шапке, иконка корзины). На странице <strong><code>/cart</code></strong>:</p>
+<ul>
+<li>меняешь количество (<code>−</code> / <code>+</code>), удаляешь позиции;</li>
+<li>видишь итоговую сумму;</li>
+<li>заполняешь имя, телефон, адрес и нажимаешь <strong>«Оформить заказ»</strong>.</li>
+</ul>
+<p>Регистрация для заказа не нужна — оформляется как гость. После отправки появляется подтверждение с номером заказа; менеджер связывается с тобой.</p>
+<p><img src="screenshots/11-cart.png" alt="Корзина и оформление заказа"></p>
+<hr>
+<h2>Часть 2 — Для продавцов (дилеров)</h2>
+<p>Дилер — продавец со своим кабинетом: ведёт <strong>свои</strong> товары, видит <strong>свои</strong> заказы и остатки.</p>
+<h3>2.1. Регистрация</h3>
+<p><code>https://petronix.uz/register</code> — имя, email, пароль (мин. 8 символов). Аккаунт создаётся с ролью <strong>продавец (DEALER)</strong>, дальше попадаешь в кабинет.</p>
+<p><img src="screenshots/07-register.png" alt="Страница регистрации"></p>
+<h3>2.2. Вход</h3>
+<p><code>https://petronix.uz/login</code> — email и пароль. Внизу — ссылки между входом и регистрацией.</p>
+<p><img src="screenshots/08-login.png" alt="Страница входа"></p>
+<h3>2.3. Кабинет: товары и заказы</h3>
+<p>После входа доступны разделы <strong>Mahsulotlar</strong> (товары), <strong>Buyurtmalar</strong> (заказы) и <strong>Ombor</strong> (склад) — но всё <strong>только по своим</strong> товарам.</p>
+<p><img src="screenshots/09-dealer-cabinet.png" alt="Кабинет продавца"></p>
+<ul>
+<li><strong>Mahsulotlar:</strong> кнопка <strong>«Qo&#39;shish»</strong> — название (3 языка), категория/подкатегория, цены, фото. Видны и редактируются только свои товары.</li>
+<li><strong>Buyurtmalar:</strong> заказы, содержащие твои товары (только твои позиции). Статус заказа меняет администратор.</li>
+<li><strong>Ombor:</strong> остатки и движения по твоим товарам.</li>
+</ul>
+<hr>
+<h2>Часть 3 — Для администратора</h2>
+<p>Админу доступно всё: заказы, склад, отчёты, товары всех продавцов, категории и карусель.</p>
+<h3>3.1. Заказы (раздел «Buyurtmalar»)</h3>
+<p>Список всех заказов: клиент, телефон, сумма, оплата, статус. По заказу можно:</p>
+<ul>
+<li>раскрыть состав (позиции, количество, суммы);</li>
+<li>сменить <strong>статус</strong>: Yangi → Tasdiqlangan → To&#39;langan → Jo&#39;natilgan → Bajarilgan (или Bekor qilingan);</li>
+<li>нажать <strong>«To&#39;lovni tasdiqlash»</strong> — отметить заказ оплаченным.</li>
+</ul>
+<p><img src="screenshots/12-admin-orders.png" alt="Заказы"></p>
+<blockquote>
+<p>При переходе заказа в «подтверждён/оплачен» товар автоматически списывается со склада; при отмене — возвращается.</p>
+</blockquote>
+<h3>3.2. Склад (раздел «Ombor»)</h3>
+<ul>
+<li><strong>Остатки:</strong> товар, количество, минимум, стоимость остатка; низкие остатки подсвечиваются.</li>
+<li><strong>+ Kirim (приход):</strong> выбираешь поставщика и позиции (товар, кол-во, закупочная цена) → проведение увеличивает остаток.</li>
+<li><strong>+ Yetkazib beruvchi:</strong> добавить поставщика.</li>
+<li><strong>Tuzatish / Chiqarish:</strong> ручная корректировка остатка или списание.</li>
+<li><strong>История движений:</strong> все операции (приход, продажа, списание, корректировка).</li>
+</ul>
+<p><img src="screenshots/13-admin-warehouse.png" alt="Склад"></p>
+<h3>3.3. Отчёты (раздел «Hisobotlar»)</h3>
+<p>Выбираешь период и отчёт; есть выгрузка в CSV:</p>
+<ul>
+<li><strong>Sotuvlar</strong> — выручка, кол-во заказов, средний чек по дням;</li>
+<li><strong>Qoldiqlar</strong> — остатки и их стоимость, низкие остатки;</li>
+<li><strong>Foyda</strong> — прибыль и маржа (розница − закупка);</li>
+<li><strong>Aylanma</strong> — обороты по категориям или по дилерам.</li>
+</ul>
+<p><img src="screenshots/14-admin-reports.png" alt="Отчёты"></p>
+<h3>3.4. Карусель (раздел «Karusel»)</h3>
+<p>Загрузка/удаление баннеров главной страницы (JPEG/PNG/WebP, до 5 МБ). Не зависит от категорий.</p>
+<p><img src="screenshots/04-admin-karusel.png" alt="Карусель"></p>
+<h3>3.5. Категории и подкатегории (раздел «Kategoriyalar»)</h3>
+<p><strong>«+ Qo&#39;shish»</strong> для категории (название на 3 языках + slug). Внутри карточки — блок <strong>«SUBKATEGORIYALAR»</strong> для подкатегорий. ✏️ / 🗑 — редактировать/удалить (удаление категории удаляет её подкатегории).</p>
+<p><img src="screenshots/05-admin-subcategories.png" alt="Категории и подкатегории"></p>
+<h3>3.6. Товары</h3>
+<p><strong>Mahsulotlar → «Qo&#39;shish»</strong>. Выбор категории → появляется поле подкатегории. Заполняешь названия/описания (3 языка), цены (закупка, розница, опт), фото.</p>
+<p><img src="screenshots/06-admin-product-subtype.png" alt="Форма товара"></p>
+<hr>
+<h2>Коротко: кто что может</h2>
+<table>
+<thead>
+<tr>
+<th>Действие</th>
+<th align="center">Клиент</th>
+<th align="center">Продавец</th>
+<th align="center">Админ</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Каталог, поиск, корзина, оформление заказа</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td>Переключение языка</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td>Регистрация / вход</td>
+<td align="center">—</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td>Свои товары</td>
+<td align="center">—</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td>Свои заказы и остатки</td>
+<td align="center">—</td>
+<td align="center">✅</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td><strong>Все</strong> заказы, смена статуса, оплата</td>
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td>Склад: приход, списание, поставщики</td>
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td>Отчёты (продажи/остатки/прибыль/обороты)</td>
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">✅</td>
+</tr>
+<tr>
+<td>Категории, подкатегории, карусель</td>
+<td align="center">—</td>
+<td align="center">—</td>
+<td align="center">✅</td>
+</tr>
+</tbody></table>
+</body></html>
