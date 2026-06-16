@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WarehouseService } from '../warehouse/warehouse.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 // Statuses at which stock is considered consumed (sale posted)
 const SOLD_STATUSES: OrderStatus[] = ['CONFIRMED', 'PAID', 'SHIPPED', 'COMPLETED'];
@@ -22,7 +23,11 @@ interface CheckoutDto {
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService, private warehouse: WarehouseService) {}
+  constructor(
+    private prisma: PrismaService,
+    private warehouse: WarehouseService,
+    private notifications: NotificationsService,
+  ) {}
 
   async create(dto: CheckoutDto) {
     if (!dto.customerName || !dto.customerPhone) {
@@ -77,6 +82,7 @@ export class OrdersService {
     if (user.role === 'ADMIN') {
       return this.prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
+        take: 500,
         include: { items: true, payment: true },
       });
     }
@@ -84,6 +90,7 @@ export class OrdersService {
     return this.prisma.order.findMany({
       where: { items: { some: { sellerId: user.sub } } },
       orderBy: { createdAt: 'desc' },
+      take: 500,
       include: { items: { where: { sellerId: user.sub } }, payment: true },
     });
   }
@@ -141,19 +148,12 @@ export class OrdersService {
   }
 
   private async notify(order: { id: string; customerName: string; customerPhone: string; total: number }) {
-    const botToken = process.env.BOT_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.ADMIN_CHAT_ID ?? process.env.TELEGRAM_CHAT_ID;
-    if (!botToken || !chatId) return;
     const text =
       `🛒 *Yangi buyurtma!*\n\n` +
       `👤 *Mijoz:* ${order.customerName}\n` +
       `📞 *Telefon:* ${order.customerPhone}\n` +
       `💰 *Summa:* $${order.total}\n` +
       `🆔 *Buyurtma:* ${order.id}`;
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
-    });
+    await this.notifications.send(text);
   }
 }

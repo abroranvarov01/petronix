@@ -1,9 +1,10 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private redis: RedisService) {}
 
   // Публичный список — без costPrice и wholesalePrice.
   // Серверный фильтр (type/subtype), поиск (q) и пагинация.
@@ -33,34 +34,37 @@ export class ProductsService {
         : {}),
     };
 
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.product.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          nameUz: true,
-          nameRu: true,
-          nameEn: true,
-          descriptionUz: true,
-          descriptionRu: true,
-          descriptionEn: true,
-          brand: true,
-          type: true,
-          subtype: true,
-          image: true,
-          sellPrice: true,
-          owner: { select: { id: true, name: true } },
-          createdAt: true,
-          updatedAt: true,
-        },
-      }),
-      this.prisma.product.count({ where }),
-    ]);
-
-    return { items, total, page, limit, pages: Math.ceil(total / limit) };
+    // Cache the (hot) public catalog reads; invalidated on any product write.
+    const cacheKey = `products:list:${JSON.stringify({ type: params.type ?? '', subtype: params.subtype ?? '', q, page, limit })}`;
+    return this.redis.wrap(cacheKey, 30, async () => {
+      const [items, total] = await this.prisma.$transaction([
+        this.prisma.product.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            nameUz: true,
+            nameRu: true,
+            nameEn: true,
+            descriptionUz: true,
+            descriptionRu: true,
+            descriptionEn: true,
+            brand: true,
+            type: true,
+            subtype: true,
+            image: true,
+            sellPrice: true,
+            owner: { select: { id: true, name: true } },
+            createdAt: true,
+            updatedAt: true,
+          },
+        }),
+        this.prisma.product.count({ where }),
+      ]);
+      return { items, total, page, limit, pages: Math.ceil(total / limit) };
+    });
   }
 
   // Публичный один товар
@@ -89,16 +93,19 @@ export class ProductsService {
     return product;
   }
 
-  // Полный список с ценами (для авторизованных)
+  // Полный список с ценами (для авторизованных). take-лимит — защита от OOM.
   async findAll() {
     return this.prisma.product.findMany({
       orderBy: { createdAt: 'desc' },
+      take: 1000,
       include: { owner: { select: { id: true, name: true, role: true } } },
     });
   }
 
   async create(data: any) {
-    return this.prisma.product.create({ data });
+    const created = await this.prisma.product.create({ data });
+    await this.redis.delPattern('products:*');
+    return created;
   }
 
   async update(id: string, data: any, user: { sub: string; role: string }) {
@@ -112,7 +119,9 @@ export class ProductsService {
 
     // Не даём менять ownerId
     const { ownerId, ...rest } = data;
-    return this.prisma.product.update({ where: { id }, data: rest });
+    const updated = await this.prisma.product.update({ where: { id }, data: rest });
+    await this.redis.delPattern('products:*');
+    return updated;
   }
 
   async remove(id: string, user: { sub: string; role: string }) {
@@ -123,6 +132,8 @@ export class ProductsService {
       throw new ForbiddenException('Faqat o\'z mahsulotingizni o\'chirishingiz mumkin');
     }
 
-    return this.prisma.product.delete({ where: { id } });
+    const removed = await this.prisma.product.delete({ where: { id } });
+    await this.redis.delPattern('products:*');
+    return removed;
   }
 }

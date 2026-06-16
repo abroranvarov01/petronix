@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 type MovementType = 'RECEIPT' | 'SALE' | 'WRITE_OFF' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'ADJUSTMENT';
 
@@ -22,7 +23,7 @@ interface AuthUser {
 
 @Injectable()
 export class WarehouseService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private notifications: NotificationsService) {}
 
   /** Find the default warehouse, creating one on first use. */
   async getDefaultWarehouse() {
@@ -114,6 +115,7 @@ export class WarehouseService {
     return this.prisma.stock.findMany({
       where,
       orderBy: { updatedAt: 'desc' },
+      take: 1000,
       include: {
         product: { select: { id: true, nameUz: true, nameRu: true, nameEn: true, unit: true, costPrice: true, ownerId: true } },
         warehouse: { select: { id: true, name: true } },
@@ -157,16 +159,8 @@ export class WarehouseService {
   }
 
   private async notifyLowStock(productId: string, quantity: number) {
-    const botToken = process.env.BOT_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.ADMIN_CHAT_ID ?? process.env.TELEGRAM_CHAT_ID;
-    if (!botToken || !chatId) return;
     const p = await this.prisma.product.findUnique({ where: { id: productId } });
     const name = p ? p.nameUz || p.nameRu || p.nameEn : productId;
-    const text = `⚠️ *Kam qoldiq!*\n\n📦 ${name}\n📉 Qoldiq: ${quantity}`;
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
-    });
+    await this.notifications.send(`⚠️ *Kam qoldiq!*\n\n📦 ${name}\n📉 Qoldiq: ${quantity}`);
   }
 }

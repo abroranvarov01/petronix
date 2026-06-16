@@ -6,6 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import { API_URL, imgUrl } from "@/lib/api";
 import { useLang, useT } from "@/lib/i18n";
 import { addToCart } from "@/lib/cart";
+import { formatUZS } from "@/lib/currency";
 import "./products.css";
 import type { Lang } from "@/lib/i18n";
 
@@ -53,13 +54,6 @@ function getCatName(cat: Category | Subcategory, lang: Lang): string {
 }
 
 /* ========================= HELPERS ========================= */
-
-const USD_TO_UZS = 13000;
-
-function formatUZS(usd: number): string {
-	const sum = Math.round(usd * USD_TO_UZS);
-	return sum.toLocaleString("uz-UZ") + " UZS";
-}
 
 function getName(p: Product, lang: Lang): string {
 	if (lang === "ru" && p.nameRu) return p.nameRu;

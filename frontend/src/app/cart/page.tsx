@@ -7,12 +7,9 @@ import { API_URL, imgUrl } from "@/lib/api";
 import { useLang, useT } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
 import { getCart, setQty, removeFromCart, clearCart, cartTotal, type CartItem } from "@/lib/cart";
+import { formatUZS } from "@/lib/currency";
 import "./cart.css";
 
-const USD_TO_UZS = 13000;
-function formatUZS(usd: number): string {
-	return Math.round(usd * USD_TO_UZS).toLocaleString("uz-UZ") + " UZS";
-}
 function name(i: CartItem, lang: Lang): string {
 	if (lang === "ru" && i.nameRu) return i.nameRu;
 	if (lang === "en" && i.nameEn) return i.nameEn;
