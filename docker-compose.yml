@@ -35,11 +35,12 @@ services:
       DATABASE_URL: "postgresql://postgres:adminsecret@db:5432/petronix_db"
       REDIS_URL: "redis://redis:6379"
       PORT: 3001
-      TELEGRAM_BOT_TOKEN: "8591029476:AAEGZBysaWCgrzyZNwAdFi8wl4Q9kEFl1Pk"
-      TELEGRAM_CHAT_ID: "-4912475701"
-      BOT_TOKEN: "8591029476:AAEGZBysaWCgrzyZNwAdFi8wl4Q9kEFl1Pk"
-      ADMIN_CHAT_ID: "-4912475701"
-      JWT_SECRET: "petronix-super-secret-key-2026"
+      # Secrets come from your local .env (never committed). See .env.example.
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      TELEGRAM_CHAT_ID: "${TELEGRAM_CHAT_ID:-}"
+      BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      ADMIN_CHAT_ID: "${TELEGRAM_CHAT_ID:-}"
+      JWT_SECRET: "${JWT_SECRET:-dev-insecure-secret-do-not-use-in-prod}"
     ports:
       - "3001:3001"
     volumes:

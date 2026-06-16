@@ -11,7 +11,9 @@ import { PrismaModule } from '../prisma/prisma.module';
     PrismaModule,
     JwtModule.register({
       global: true,
-      secret: process.env.JWT_SECRET || 'petronix-super-secret-key-2026',
+      // No production secret in code. Dev fallback is obviously non-secret;
+      // main.ts refuses to boot in production without a real JWT_SECRET.
+      secret: process.env.JWT_SECRET || 'dev-insecure-secret-do-not-use-in-prod',
       signOptions: { expiresIn: '24h' },
     }),
   ],

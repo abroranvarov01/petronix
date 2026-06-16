@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { OrdersService } from './orders.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -8,7 +9,8 @@ import { Roles } from '../auth/roles.decorator';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  // Public — guest checkout
+  // Public — guest checkout (rate-limited against spam/abuse)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @Post()
   create(@Body() body: any) {
     return this.ordersService.create(body);

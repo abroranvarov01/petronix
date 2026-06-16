@@ -10,7 +10,13 @@ export class AuthService {
     private jwt: JwtService,
   ) {}
 
-  async register(data: { email: string; password: string; name: string; role?: 'ADMIN' | 'DEALER' }) {
+  // Public self-registration — ALWAYS a DEALER. Role is never taken from input.
+  async register(data: { email: string; password: string; name: string }) {
+    return this.createUser({ ...data, role: 'DEALER' });
+  }
+
+  // Admin-only account creation (role allowed here, guarded at the controller).
+  async createUser(data: { email: string; password: string; name: string; role: 'ADMIN' | 'DEALER' }) {
     const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
     if (existing) {
       throw new ConflictException('Bu email allaqachon ro\'yxatdan o\'tgan');
@@ -22,7 +28,7 @@ export class AuthService {
         email: data.email,
         password: hash,
         name: data.name,
-        role: data.role ?? 'DEALER',
+        role: data.role,
       },
     });
 

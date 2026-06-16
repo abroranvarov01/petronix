@@ -38,14 +38,16 @@ services:
       - db
       - redis
     environment:
-      DATABASE_URL: "postgresql://postgres:${DB_PASSWORD:-adminsecret}@db:5432/petronix_db"
+      NODE_ENV: production
+      # All secrets are required from .env — no defaults committed to the repo.
+      DATABASE_URL: "postgresql://postgres:${DB_PASSWORD:?set DB_PASSWORD in .env}@db:5432/petronix_db"
       REDIS_URL: "redis://redis:6379"
       PORT: 3001
-      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-8591029476:AAEGZBysaWCgrzyZNwAdFi8wl4Q9kEFl1Pk}"
-      TELEGRAM_CHAT_ID: "${TELEGRAM_CHAT_ID:--4912475701}"
-      BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-8591029476:AAEGZBysaWCgrzyZNwAdFi8wl4Q9kEFl1Pk}"
-      ADMIN_CHAT_ID: "${TELEGRAM_CHAT_ID:--4912475701}"
-      JWT_SECRET: "${JWT_SECRET:-petronix-super-secret-key-2026}"
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:?set TELEGRAM_BOT_TOKEN in .env}"
+      TELEGRAM_CHAT_ID: "${TELEGRAM_CHAT_ID:?set TELEGRAM_CHAT_ID in .env}"
+      BOT_TOKEN: "${TELEGRAM_BOT_TOKEN}"
+      ADMIN_CHAT_ID: "${TELEGRAM_CHAT_ID}"
+      JWT_SECRET: "${JWT_SECRET:?set a strong JWT_SECRET in .env}"
     ports:
       - "3001:3001"
     volumes:

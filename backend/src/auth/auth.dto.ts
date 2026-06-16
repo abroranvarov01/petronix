@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
   @ApiProperty({ example: 'admin@petronix.uz' })
@@ -17,7 +17,20 @@ export class RegisterDto {
 
   @ApiProperty({ example: 'John' })
   name: string;
+}
 
-  @ApiPropertyOptional({ enum: ['ADMIN', 'DEALER'], default: 'DEALER' })
-  role?: 'ADMIN' | 'DEALER';
+// Admin-only: creating staff/admin accounts. Role is accepted ONLY here,
+// behind an ADMIN guard — never on public /register.
+export class CreateUserDto {
+  @ApiProperty({ example: 'staff@mail.com' })
+  email: string;
+
+  @ApiProperty({ example: 'strongpassword' })
+  password: string;
+
+  @ApiProperty({ example: 'Staff' })
+  name: string;
+
+  @ApiProperty({ enum: ['ADMIN', 'DEALER'], default: 'DEALER' })
+  role: 'ADMIN' | 'DEALER';
 }
