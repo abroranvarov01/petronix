@@ -258,6 +258,7 @@
 
 .catalog-aside {
     width: 230px;
+	scrollbar-width: none;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
