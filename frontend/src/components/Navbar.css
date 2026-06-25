@@ -249,7 +249,50 @@
     line-height: 1;
 }
 
+/* ── Auth (login / account) ── */
+.nav-auth { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+
+.navbar a.nav-auth-btn,
+.navbar a.nav-auth-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-left: 0;
+    padding: 8px 16px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #e2eaf4;
+    border: 1px solid rgba(34,197,94,0.4);
+    background: rgba(34,197,94,0.08);
+    transition: 0.25s;
+}
+
+.navbar a.nav-auth-btn:hover,
+.navbar a.nav-auth-link:hover {
+    color: #fff;
+    background: rgba(34,197,94,0.2);
+    border-color: rgba(34,197,94,0.9);
+}
+
+.nav-auth-logout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+}
+.nav-auth-logout:hover { color: #f87171; background: rgba(248,113,113,0.12); }
+
 @media (max-width: 480px) {
     .navbar { padding: 10px 14px; }
     .burger { top: 25px; left: 30px; }
+    .nav-auth-text { display: none; }
+    .navbar a.nav-auth-btn,
+    .navbar a.nav-auth-link { padding: 8px; border-radius: 50%; }
 }

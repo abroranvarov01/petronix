@@ -123,7 +123,11 @@ function CatalogPage() {
 	const [loadingMore, setLoadingMore] = useState(false);
 
 	const [selectedType, setSelectedType] = useState<string | null>(searchParams.get("type"));
-	const [selectedSubtype, setSelectedSubtype] = useState<string | null>(searchParams.get("subtype"));
+	// Multi-select subcategory filter (tags). Accumulates; a second click removes.
+	const [selectedSubtypes, setSelectedSubtypes] = useState<string[]>(() => {
+		const s = searchParams.get("subtype");
+		return s ? s.split(",").filter(Boolean) : [];
+	});
 	// Which categories have their subcategory list expanded. Independent of the
 	// active filter, so opening one category does not collapse the others.
 	const [expandedCats, setExpandedCats] = useState<Set<string>>(() => {
@@ -144,7 +148,8 @@ function CatalogPage() {
 	// Sync filters from the URL (e.g. when arriving from a banner link).
 	useEffect(() => {
 		setSelectedType(searchParams.get("type"));
-		setSelectedSubtype(searchParams.get("subtype"));
+		const s = searchParams.get("subtype");
+		setSelectedSubtypes(s ? s.split(",").filter(Boolean) : []);
 		setSearchInput(searchParams.get("q") || "");
 	}, [searchParams]);
 
@@ -157,7 +162,7 @@ function CatalogPage() {
 	function buildQuery(page: number) {
 		const p = new URLSearchParams();
 		if (selectedType) p.set("type", selectedType);
-		if (selectedSubtype) p.set("subtype", selectedSubtype);
+		if (selectedSubtypes.length) p.set("subtype", selectedSubtypes.join(","));
 		if (search) p.set("q", search);
 		p.set("page", String(page));
 		p.set("limit", String(PAGE_SIZE));
@@ -173,7 +178,7 @@ function CatalogPage() {
 			.catch(() => { setItems([]); setTotal(0); })
 			.finally(() => setLoading(false));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedType, selectedSubtype, search]);
+	}, [selectedType, selectedSubtypes.join(","), search]);
 
 	function loadMore() {
 		const nextPage = Math.floor(items.length / PAGE_SIZE) + 1;
@@ -186,11 +191,14 @@ function CatalogPage() {
 	}
 
 	const activeCategory = categories.find((c) => c.slug === selectedType);
-	const activeSubcategory = activeCategory?.subcategories?.find((s) => s.slug === selectedSubtype);
+	const activeSubcategory =
+		selectedSubtypes.length === 1
+			? activeCategory?.subcategories?.find((s) => s.slug === selectedSubtypes[0])
+			: undefined;
 
 	function selectCategory(slug: string | null) {
 		setSelectedType(slug);
-		setSelectedSubtype(null);
+		setSelectedSubtypes([]);
 		if (slug === null) return;
 		// Toggle only this category's expansion; others stay as they were.
 		setExpandedCats((prev) => {
@@ -246,8 +254,14 @@ function CatalogPage() {
 										{subs.map((sub) => (
 											<button
 												key={sub.id}
-												className={`cat-sublink${selectedSubtype === sub.slug ? " active" : ""}`}
-												onClick={() => setSelectedSubtype(selectedSubtype === sub.slug ? null : sub.slug)}
+												className={`cat-sublink${selectedSubtypes.includes(sub.slug) ? " active" : ""}`}
+												onClick={() =>
+													setSelectedSubtypes((prev) =>
+														prev.includes(sub.slug)
+															? prev.filter((x) => x !== sub.slug)
+															: [...prev, sub.slug],
+													)
+												}
 											>
 												{getCatName(sub, lang)}
 											</button>

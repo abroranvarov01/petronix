@@ -43,6 +43,9 @@ const t = {
   nav_about:       { uz: "Biz haqimizda", ru: "О нас",             en: "About us" },
   nav_contacts:    { uz: "Kontaktlar",     ru: "Контакты",          en: "Contacts" },
   nav_call:        { uz: "Bog'lanish",     ru: "Связаться",         en: "Contact us" },
+  nav_login:       { uz: "Kirish",          ru: "Вход",              en: "Sign in" },
+  nav_account:     { uz: "Kabinet",         ru: "Кабинет",           en: "Account" },
+  nav_logout:      { uz: "Chiqish",         ru: "Выход",             en: "Logout" },
 
   /* ── Hero ── */
   hero_title:      { uz: "Petronix CNG SOLUTIONS",     ru: "Petronix CNG SOLUTIONS",     en: "Petronix CNG SOLUTIONS" },
@@ -252,6 +255,7 @@ const t = {
   reg_has_acc:     { uz: "Allaqachon hisobingiz bormi?", ru: "Уже есть аккаунт?", en: "Already have an account?" },
   reg_login:       { uz: "Kirish",            ru: "Войти",              en: "Sign in" },
   reg_error:       { uz: "Ro'yxatdan o'tishda xatolik", ru: "Ошибка регистрации", en: "Registration error" },
+  reg_pending:     { uz: "So'rovingiz qabul qilindi. Administrator tasdiqlagach tizimga kira olasiz.", ru: "Заявка принята. Вы сможете войти после подтверждения администратором.", en: "Your request was received. You can sign in once an admin approves it." },
 } as const;
 
 type TKey = keyof typeof t;

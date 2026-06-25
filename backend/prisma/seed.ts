@@ -24,7 +24,7 @@ async function main() {
     console.log(`User ${email} already exists (role=${existing.role}) — nothing to do.`);
   } else {
     const hash = await bcrypt.hash(password, 10);
-    await prisma.user.create({ data: { email, password: hash, name: 'Administrator', role: 'ADMIN' } });
+    await prisma.user.create({ data: { email, password: hash, name: 'Administrator', role: 'ADMIN', status: 'APPROVED' } });
     console.log(`Created ADMIN: ${email}`);
   }
   await prisma.$disconnect();

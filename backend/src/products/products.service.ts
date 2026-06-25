@@ -20,9 +20,15 @@ export class ProductsService {
     const skip = (page - 1) * limit;
     const q = (params.q ?? '').trim();
 
+    // `subtype` may be a comma-separated list — match products having ANY of them.
+    const subtypeList = (params.subtype ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
     const where: any = {
       ...(params.type ? { type: params.type } : {}),
-      ...(params.subtype ? { subtypes: { has: params.subtype } } : {}),
+      ...(subtypeList.length ? { subtypes: { hasSome: subtypeList } } : {}),
       ...(q
         ? {
             OR: [

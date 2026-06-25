@@ -124,6 +124,16 @@ interface Category {
 	subcategories?: Subcategory[];
 }
 
+interface AdminUser {
+	id: string;
+	email: string;
+	name: string;
+	role: "ADMIN" | "DEALER";
+	status: "PENDING" | "APPROVED" | "BLOCKED";
+	createdAt: string;
+	_count?: { products: number };
+}
+
 const EMPTY_PRODUCT = {
 	nameUz: "", nameRu: "", nameEn: "",
 	descriptionUz: "", descriptionRu: "", descriptionEn: "",
@@ -149,7 +159,7 @@ const LANGS: { key: Lang; label: string; flag: string }[] = [
 export default function AdminPage() {
 	const router = useRouter();
 	const [user, setUser] = useState<{ id: string; email: string; role: string } | null>(null);
-	const [activeTab, setActiveTab] = useState<"products" | "orders" | "warehouse" | "reports" | "categories" | "banners">("products");
+	const [activeTab, setActiveTab] = useState<"products" | "orders" | "warehouse" | "reports" | "categories" | "banners" | "users">("products");
 	const [activeLang, setActiveLang] = useState<Lang>("uz");
 	const [showForm, setShowForm] = useState(false);
 
@@ -206,6 +216,9 @@ export default function AdminPage() {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [reportData, setReportData] = useState<any>(null);
 	const [reportLoading, setReportLoading] = useState(false);
+
+	const [users, setUsers] = useState<AdminUser[]>([]);
+	const [usersLoading, setUsersLoading] = useState(false);
 
 	useEffect(() => {
 		const token = getToken();
@@ -359,7 +372,40 @@ export default function AdminPage() {
 
 	useEffect(() => {
 		if (user) { loadProducts(); loadCategories(); loadBanners(); loadOrders(); loadWarehouse(); }
+		if (user?.role === "ADMIN") loadUsers();
 	}, [user]);
+
+	async function loadUsers() {
+		setUsersLoading(true);
+		try {
+			const res = await fetch(`${API_URL}/users`, { headers: authHeaders() });
+			setUsers(res.ok ? await res.json() : []);
+		} catch { setUsers([]); }
+		finally { setUsersLoading(false); }
+	}
+
+	async function userSetStatus(id: string, status: AdminUser["status"]) {
+		const res = await fetch(`${API_URL}/users/${id}/status`, {
+			method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status }),
+		});
+		if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.message || "Xatolik"); return; }
+		await loadUsers();
+	}
+
+	async function userSetRole(id: string, role: AdminUser["role"]) {
+		const res = await fetch(`${API_URL}/users/${id}/role`, {
+			method: "PATCH", headers: authHeaders(), body: JSON.stringify({ role }),
+		});
+		if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.message || "Xatolik"); return; }
+		await loadUsers();
+	}
+
+	async function userDelete(id: string) {
+		if (!confirm("Foydalanuvchini o'chirishni tasdiqlaysizmi?")) return;
+		const res = await fetch(`${API_URL}/users/${id}`, { method: "DELETE", headers: authHeaders() });
+		if (!res.ok) { const d = await res.json().catch(() => ({})); alert(d.message || "Xatolik"); return; }
+		await loadUsers();
+	}
 
 	async function handleBannerAdd(image: string) {
 		if (!image) return;
@@ -532,7 +578,7 @@ export default function AdminPage() {
 		await loadCategories();
 	}
 
-	function handleLogout() { logout(); router.push("/login"); }
+	function handleLogout() { logout(); window.dispatchEvent(new Event("auth-changed")); router.push("/login"); }
 
 	const isAdmin = user?.role === "ADMIN";
 	const visibleProducts = isAdmin ? products : products.filter((p) => p.ownerId === user?.id);
@@ -605,6 +651,18 @@ export default function AdminPage() {
 							>
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="10" r="2"/><path d="M2 17l5-5 4 4 5-5 6 6"/></svg>
 								Karusel
+							</button>
+						)}
+						{isAdmin && (
+							<button
+								className={`adm-nav-item${activeTab === "users" ? " active" : ""}`}
+								onClick={() => setActiveTab("users")}
+							>
+								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+								Foydalanuvchilar
+								{users.filter((u) => u.status === "PENDING").length > 0 && (
+									<span className="adm-nav-badge">{users.filter((u) => u.status === "PENDING").length}</span>
+								)}
 							</button>
 						)}
 					</nav>
@@ -1388,6 +1446,97 @@ export default function AdminPage() {
 										</button>
 									</div>
 								))}
+							</div>
+						)}
+					</>
+				)}
+
+				{/* =================== USERS =================== */}
+				{activeTab === "users" && isAdmin && (
+					<>
+						<div className="adm-toolbar">
+							<div>
+								<h1 className="adm-page-title">Foydalanuvchilar</h1>
+								<p className="adm-page-sub">
+									{users.length} ta foydalanuvchi
+									{users.filter((u) => u.status === "PENDING").length > 0 &&
+										` · ${users.filter((u) => u.status === "PENDING").length} ta tasdiq kutmoqda`}
+								</p>
+							</div>
+						</div>
+
+						{usersLoading ? (
+							<div className="adm-loading"><div className="adm-spinner" />Yuklanmoqda...</div>
+						) : users.length === 0 ? (
+							<div className="adm-empty">
+								<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+								<p>Foydalanuvchilar yo'q</p>
+							</div>
+						) : (
+							<div className="adm-table-wrap">
+								<table className="adm-table">
+									<thead>
+										<tr>
+											<th>Foydalanuvchi</th>
+											<th>Rol</th>
+											<th>Holat</th>
+											<th>Mahsulot</th>
+											<th>Sana</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody>
+										{users.map((u) => {
+											const self = u.id === user?.id;
+											return (
+												<tr key={u.id} className={u.status === "PENDING" ? "is-pending" : ""}>
+													<td>
+														<div className="adm-table-name">{u.name || "—"}</div>
+														<div className="adm-user-email-sm">{u.email}</div>
+													</td>
+													<td>
+														<span className={`adm-role-badge${u.role === "ADMIN" ? " admin" : ""}`}>
+															{u.role === "ADMIN" ? "Administrator" : "Diller"}
+														</span>
+													</td>
+													<td>
+														<span className={`adm-status-badge ${u.status.toLowerCase()}`}>
+															{u.status === "PENDING" ? "Kutilmoqda" : u.status === "APPROVED" ? "Tasdiqlangan" : "Bloklangan"}
+														</span>
+													</td>
+													<td className="adm-table-owner">{u._count?.products ?? 0}</td>
+													<td className="adm-table-owner">{new Date(u.createdAt).toLocaleDateString()}</td>
+													<td>
+														{self ? (
+															<span className="adm-user-self">Siz</span>
+														) : (
+															<div className="adm-table-actions">
+																{u.status === "PENDING" && (
+																	<button className="adm-btn-sm approve" onClick={() => userSetStatus(u.id, "APPROVED")}>Tasdiqlash</button>
+																)}
+																{u.status === "APPROVED" && (
+																	<button className="adm-btn-sm block" onClick={() => userSetStatus(u.id, "BLOCKED")}>Bloklash</button>
+																)}
+																{u.status === "BLOCKED" && (
+																	<button className="adm-btn-sm approve" onClick={() => userSetStatus(u.id, "APPROVED")}>Blokdan chiqarish</button>
+																)}
+																<button
+																	className="adm-btn-sm role"
+																	onClick={() => userSetRole(u.id, u.role === "ADMIN" ? "DEALER" : "ADMIN")}
+																>
+																	{u.role === "ADMIN" ? "Diller qilish" : "Admin qilish"}
+																</button>
+																<button className="adm-action-btn delete" onClick={() => userDelete(u.id)} title="O'chirish">
+																	<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+																</button>
+															</div>
+														)}
+													</td>
+												</tr>
+											);
+										})}
+									</tbody>
+								</table>
 							</div>
 						)}
 					</>

@@ -14,18 +14,20 @@ export default function RegisterPage() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
+	const [success, setSuccess] = useState("");
 	const [loading, setLoading] = useState(false);
 
 	async function handleSubmit(e: FormEvent) {
 		e.preventDefault();
 		setLoading(true);
 		setError("");
+		setSuccess("");
 
 		try {
 			const res = await fetch(`${API_URL}/auth/register`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name, email, password, role: "DEALER" }),
+				body: JSON.stringify({ name, email, password }),
 			});
 			const data = await res.json();
 
@@ -34,10 +36,11 @@ export default function RegisterPage() {
 				return;
 			}
 
-			localStorage.setItem("token", data.token);
-			localStorage.setItem("user", JSON.stringify(data.user));
-
-			router.push("/admin");
+			// Self-registration is now pending admin approval — no auto-login.
+			setSuccess(data.message || t("reg_pending"));
+			setName("");
+			setEmail("");
+			setPassword("");
 		} catch {
 			setError(t("login_net_err"));
 		} finally {
@@ -90,6 +93,7 @@ export default function RegisterPage() {
 					</div>
 
 					{error && <div className="login-error">{error}</div>}
+					{success && <div className="login-success">{success}</div>}
 
 					<button type="submit" className="login-btn" disabled={loading}>
 						{loading ? t("reg_loading") : t("reg_btn")}
