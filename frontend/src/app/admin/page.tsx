@@ -17,7 +17,7 @@ interface Product {
 	descriptionEn: string;
 	brand: string[];
 	type: string;
-	subtype: string;
+	subtypes: string[];
 	image: string;
 	costPrice: number;
 	sellPrice: number;
@@ -129,7 +129,7 @@ const EMPTY_PRODUCT = {
 	descriptionUz: "", descriptionRu: "", descriptionEn: "",
 	brand: [] as string[],
 	type: "",
-	subtype: "",
+	subtypes: [] as string[],
 	image: "",
 	costPrice: 0,
 	sellPrice: 0,
@@ -414,7 +414,7 @@ export default function AdminPage() {
 		setForm({
 			nameUz: p.nameUz, nameRu: p.nameRu, nameEn: p.nameEn,
 			descriptionUz: p.descriptionUz, descriptionRu: p.descriptionRu, descriptionEn: p.descriptionEn,
-			brand: p.brand, type: p.type, subtype: p.subtype || "", image: p.image,
+			brand: p.brand, type: p.type, subtypes: p.subtypes ?? [], image: p.image,
 			costPrice: p.costPrice, sellPrice: p.sellPrice, wholesalePrice: p.wholesalePrice,
 		});
 		setShowForm(true);
@@ -693,7 +693,7 @@ export default function AdminPage() {
 											</div>
 											<div className="adm-field">
 												<label>Kategoriya</label>
-												<select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value, subtype: "" }))} required>
+												<select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value, subtypes: [] }))} required>
 													<option value="">— tanlang —</option>
 													{categories.map((c) => (
 														<option key={c.id} value={c.slug}>{c.nameUz || c.nameRu || c.nameEn || c.name}</option>
@@ -703,15 +703,31 @@ export default function AdminPage() {
 											{(() => {
 												const subs = categories.find((c) => c.slug === form.type)?.subcategories ?? [];
 												if (subs.length === 0) return null;
+												const toggleSub = (slug: string) =>
+													setForm((p) => ({
+														...p,
+														subtypes: p.subtypes.includes(slug)
+															? p.subtypes.filter((s) => s !== slug)
+															: [...p.subtypes, slug],
+													}));
 												return (
-													<div className="adm-field">
-														<label>Subkategoriya</label>
-														<select value={form.subtype} onChange={(e) => setForm((p) => ({ ...p, subtype: e.target.value }))}>
-															<option value="">— yo'q —</option>
-															{subs.map((s) => (
-																<option key={s.id} value={s.slug}>{s.nameUz || s.nameRu || s.nameEn || s.name}</option>
-															))}
-														</select>
+													<div className="adm-field adm-field-full">
+														<label>Subkategoriyalar <span className="adm-field-hint">(bir nechta tanlash mumkin)</span></label>
+														<div className="adm-subtag-list">
+															{subs.map((s) => {
+																const on = form.subtypes.includes(s.slug);
+																return (
+																	<button
+																		type="button"
+																		key={s.id}
+																		className={`adm-subtag${on ? " on" : ""}`}
+																		onClick={() => toggleSub(s.slug)}
+																	>
+																		{s.nameUz || s.nameRu || s.nameEn || s.name}
+																	</button>
+																);
+															})}
+														</div>
 													</div>
 												);
 											})()}
@@ -810,15 +826,15 @@ export default function AdminPage() {
 													<span className="adm-table-badge">
 														{(() => { const c = categories.find((c) => c.slug === p.type); return c ? (c.nameUz || c.nameRu || c.nameEn || c.name) : p.type; })()}
 													</span>
-													{p.subtype && (
-														<span className="adm-table-badge adm-table-badge-sub">
-															{(() => {
-																const c = categories.find((c) => c.slug === p.type);
-																const s = c?.subcategories?.find((s) => s.slug === p.subtype);
-																return s ? (s.nameUz || s.nameRu || s.nameEn || s.name) : p.subtype;
-															})()}
-														</span>
-													)}
+													{(p.subtypes ?? []).map((slug) => {
+														const c = categories.find((c) => c.slug === p.type);
+														const s = c?.subcategories?.find((s) => s.slug === slug);
+														return (
+															<span key={slug} className="adm-table-badge adm-table-badge-sub">
+																{s ? (s.nameUz || s.nameRu || s.nameEn || s.name) : slug}
+															</span>
+														);
+													})}
 												</td>
 												<td className="adm-table-price">${p.sellPrice}</td>
 												{isAdmin && <td className="adm-table-owner">{p.owner?.name || "—"}</td>}

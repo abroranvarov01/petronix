@@ -23,7 +23,7 @@ interface Product {
 	image: string;
 	brand: string[];
 	type: string;
-	subtype: string;
+	subtypes: string[];
 	sellPrice: number;
 	owner?: { id: string; name: string };
 }

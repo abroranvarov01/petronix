@@ -22,7 +22,7 @@ export class ProductsService {
 
     const where: any = {
       ...(params.type ? { type: params.type } : {}),
-      ...(params.subtype ? { subtype: params.subtype } : {}),
+      ...(params.subtype ? { subtypes: { has: params.subtype } } : {}),
       ...(q
         ? {
             OR: [
@@ -53,7 +53,7 @@ export class ProductsService {
             descriptionEn: true,
             brand: true,
             type: true,
-            subtype: true,
+            subtypes: true,
             image: true,
             sellPrice: true,
             owner: { select: { id: true, name: true } },
@@ -81,7 +81,7 @@ export class ProductsService {
         descriptionEn: true,
         brand: true,
         type: true,
-        subtype: true,
+        subtypes: true,
         image: true,
         sellPrice: true,
         owner: { select: { id: true, name: true } },

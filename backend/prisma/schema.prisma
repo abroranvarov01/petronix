@@ -100,7 +100,7 @@ model Product {
   descriptionEn  String   @default("")
   brand          String[]
   type           String
-  subtype        String   @default("")
+  subtypes       String[]
   unit           String   @default("dona")
   image          String   @default("")
   costPrice      Float    @default(0)
@@ -116,7 +116,7 @@ model Product {
   updatedAt      DateTime @updatedAt
 
   @@index([type])
-  @@index([type, subtype])
+  @@index([subtypes], type: Gin)
   @@index([ownerId])
 }
 
