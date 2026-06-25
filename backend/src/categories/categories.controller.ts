@@ -22,6 +22,13 @@ export class CategoriesController {
 
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('ADMIN')
+  @Patch('reorder')
+  reorder(@Body() body: { ids: string[] }) {
+    return this.categoriesService.reorder(body.ids ?? []);
+  }
+
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: any) {
     return this.categoriesService.update(id, body);

@@ -124,6 +124,12 @@ function CatalogPage() {
 
 	const [selectedType, setSelectedType] = useState<string | null>(searchParams.get("type"));
 	const [selectedSubtype, setSelectedSubtype] = useState<string | null>(searchParams.get("subtype"));
+	// Which categories have their subcategory list expanded. Independent of the
+	// active filter, so opening one category does not collapse the others.
+	const [expandedCats, setExpandedCats] = useState<Set<string>>(() => {
+		const t = searchParams.get("type");
+		return t ? new Set([t]) : new Set();
+	});
 	const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
 	const [search, setSearch] = useState(searchInput.trim());
 
@@ -185,6 +191,14 @@ function CatalogPage() {
 	function selectCategory(slug: string | null) {
 		setSelectedType(slug);
 		setSelectedSubtype(null);
+		if (slug === null) return;
+		// Toggle only this category's expansion; others stay as they were.
+		setExpandedCats((prev) => {
+			const next = new Set(prev);
+			if (next.has(slug)) next.delete(slug);
+			else next.add(slug);
+			return next;
+		});
 	}
 
 	const handleOrder = (product: Product) => {
@@ -214,16 +228,20 @@ function CatalogPage() {
 					</button>
 					{categories.map((cat) => {
 						const isActive = selectedType === cat.slug;
+						const isExpanded = expandedCats.has(cat.slug);
 						const subs = cat.subcategories ?? [];
 						return (
 							<div key={cat.id} className="cat-group">
 								<button
-									className={`cat-link${isActive ? " active" : ""}`}
+									className={`cat-link${isActive ? " active" : ""}${isExpanded ? " expanded" : ""}`}
 									onClick={() => selectCategory(cat.slug)}
 								>
-									{getCatName(cat, lang)}
+									<span className="cat-link-label">{getCatName(cat, lang)}</span>
+									{subs.length > 0 && (
+										<svg className="cat-link-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+									)}
 								</button>
-								{isActive && subs.length > 0 && (
+								{isExpanded && subs.length > 0 && (
 									<div className="cat-sublist">
 										{subs.map((sub) => (
 											<button

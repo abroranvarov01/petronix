@@ -168,6 +168,8 @@ export default function AdminPage() {
 	const [catError, setCatError] = useState<string | null>(null);
 	const [catLoading, setCatLoading] = useState(false);
 	const [showCatForm, setShowCatForm] = useState(false);
+	const [dragCatId, setDragCatId] = useState<string | null>(null);
+	const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
 
 	const [subForm, setSubForm] = useState(EMPTY_SUBCATEGORY);
 	const [editingSubId, setEditingSubId] = useState<string | null>(null);
@@ -448,6 +450,25 @@ export default function AdminPage() {
 		if (!confirm("Kategoriyani o'chirishni tasdiqlaysizmi?")) return;
 		await fetch(`${API_URL}/categories/${id}`, { method: "DELETE", headers: authHeaders() });
 		await loadCategories();
+	}
+
+	// Drag-and-drop reordering of categories.
+	function handleCatDrop(targetId: string) {
+		if (!dragCatId || dragCatId === targetId) { setDragCatId(null); setDragOverCatId(null); return; }
+		const from = categories.findIndex((c) => c.id === dragCatId);
+		const to = categories.findIndex((c) => c.id === targetId);
+		if (from === -1 || to === -1) { setDragCatId(null); setDragOverCatId(null); return; }
+		const next = [...categories];
+		const [moved] = next.splice(from, 1);
+		next.splice(to, 0, moved);
+		setCategories(next); // optimistic
+		setDragCatId(null);
+		setDragOverCatId(null);
+		fetch(`${API_URL}/categories/reorder`, {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json", ...authHeaders() },
+			body: JSON.stringify({ ids: next.map((c) => c.id) }),
+		}).then((res) => { if (!res.ok) loadCategories(); }).catch(() => loadCategories());
 	}
 
 	function startCatEdit(cat: Category) {
@@ -1250,8 +1271,20 @@ export default function AdminPage() {
 						) : (
 							<div className="adm-cat-grid">
 								{categories.map((cat) => (
-									<div key={cat.id} className={`adm-cat-card${editingCatId === cat.id ? " is-editing" : ""}`}>
+									<div
+										key={cat.id}
+										className={`adm-cat-card${editingCatId === cat.id ? " is-editing" : ""}${dragCatId === cat.id ? " is-dragging" : ""}${dragOverCatId === cat.id ? " is-dragover" : ""}`}
+										draggable
+										onDragStart={(e) => { setDragCatId(cat.id); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", cat.id); }}
+										onDragOver={(e) => { e.preventDefault(); if (dragOverCatId !== cat.id) setDragOverCatId(cat.id); }}
+										onDragLeave={() => { if (dragOverCatId === cat.id) setDragOverCatId(null); }}
+										onDrop={(e) => { e.preventDefault(); handleCatDrop(cat.id); }}
+										onDragEnd={() => { setDragCatId(null); setDragOverCatId(null); }}
+									>
 										<div className="adm-cat-body">
+											<span className="adm-cat-drag" title="Tartibni o'zgartirish uchun torting">
+												<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>
+											</span>
 											<div className="adm-cat-name">{cat.nameUz || cat.nameRu || cat.nameEn || cat.name}</div>
 											<div className="adm-cat-meta">/{cat.slug}</div>
 										</div>

@@ -474,6 +474,18 @@
 
 .adm-cat-card:hover { border-color: #1e3347; }
 .adm-cat-card.is-editing { border-color: #22c55e55; }
+.adm-cat-card[draggable="true"] { cursor: grab; }
+.adm-cat-card.is-dragging { opacity: 0.4; cursor: grabbing; }
+.adm-cat-card.is-dragover { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6 inset; }
+
+.adm-cat-drag {
+  display: inline-flex;
+  align-items: center;
+  color: #4a6075;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.adm-cat-card:hover .adm-cat-drag { color: #6b829a; }
 
 .adm-cat-img {
   width: 100%;

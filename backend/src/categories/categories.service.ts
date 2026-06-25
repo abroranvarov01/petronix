@@ -28,6 +28,17 @@ export class CategoriesService {
     return created;
   }
 
+  async reorder(ids: string[]) {
+    // Persist the new ordering: order = position in the given array.
+    await this.prisma.$transaction(
+      ids.map((id, index) =>
+        this.prisma.category.update({ where: { id }, data: { order: index } }),
+      ),
+    );
+    await this.redis.delPattern('categories:*');
+    return { ok: true };
+  }
+
   async update(id: string, data: any) {
     const updated = await this.prisma.category.update({ where: { id }, data });
     await this.redis.delPattern('categories:*');
