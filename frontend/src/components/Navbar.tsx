@@ -92,14 +92,16 @@ export function Navbar() {
 
 			<LangSwitcher />
 
-			<div
+			<button
+				type="button"
 				className={`burger ${isMenuOpen ? "active" : ""}`}
 				onClick={() => setIsMenuOpen((v) => !v)}
+				aria-label="Toggle menu"
 			>
 				<span />
 				<span />
 				<span />
-			</div>
+			</button>
 		</nav>
 	);
 }
