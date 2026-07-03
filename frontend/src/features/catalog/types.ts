@@ -9,8 +9,7 @@ export interface CatalogProduct {
 	descriptionRu: string;
 	descriptionEn: string;
 	image: string;
-	brand: string[];
-	type: string;
+	types: string[];
 	subtypes: string[];
 	sellPrice: number;
 	owner?: { id: string; name: string };

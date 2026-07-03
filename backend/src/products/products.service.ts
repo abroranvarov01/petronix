@@ -27,7 +27,7 @@ export class ProductsService {
       .filter(Boolean);
 
     const where: any = {
-      ...(params.type ? { type: params.type } : {}),
+      ...(params.type ? { types: { has: params.type } } : {}),
       ...(subtypeList.length ? { subtypes: { hasSome: subtypeList } } : {}),
       ...(q
         ? {
@@ -57,8 +57,7 @@ export class ProductsService {
             descriptionUz: true,
             descriptionRu: true,
             descriptionEn: true,
-            brand: true,
-            type: true,
+            types: true,
             subtypes: true,
             image: true,
             sellPrice: true,
@@ -85,8 +84,7 @@ export class ProductsService {
         descriptionUz: true,
         descriptionRu: true,
         descriptionEn: true,
-        brand: true,
-        type: true,
+        types: true,
         subtypes: true,
         image: true,
         sellPrice: true,

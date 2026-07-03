@@ -16,8 +16,8 @@ export interface Product {
 	descriptionUz: string;
 	descriptionRu: string;
 	descriptionEn: string;
-	brand: string[];
-	type: string;
+	// Category slugs — a product can belong to several categories.
+	types: string[];
 	subtypes: string[];
 	image: string;
 	costPrice: number;

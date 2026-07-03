@@ -14,8 +14,7 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
 export const EMPTY_PRODUCT = {
 	nameUz: "", nameRu: "", nameEn: "",
 	descriptionUz: "", descriptionRu: "", descriptionEn: "",
-	brand: [] as string[],
-	type: "",
+	types: [] as string[],
 	subtypes: [] as string[],
 	image: "",
 	costPrice: 0,

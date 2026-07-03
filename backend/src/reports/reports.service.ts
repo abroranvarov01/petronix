@@ -56,7 +56,7 @@ export class ReportsService {
       },
       include: {
         order: { select: { id: true, createdAt: true } },
-        product: { select: { costPrice: true, type: true, nameUz: true, nameRu: true, nameEn: true } },
+        product: { select: { costPrice: true, types: true, nameUz: true, nameRu: true, nameEn: true } },
       },
     });
   }
@@ -117,7 +117,8 @@ export class ReportsService {
       const items = await this.soldItems(range, user);
       const map = new Map<string, { key: string; revenue: number; qty: number }>();
       for (const it of items) {
-        const key = by === 'dealer' ? (it.sellerId ?? '—') : (it.product?.type ?? '—');
+        // Multi-category products are attributed to their first category.
+        const key = by === 'dealer' ? (it.sellerId ?? '—') : (it.product?.types?.[0] ?? '—');
         const g = map.get(key) ?? { key, revenue: 0, qty: 0 };
         g.revenue += it.subtotal;
         g.qty += it.qty;
@@ -145,7 +146,7 @@ export class ReportsService {
       const where = user.role === 'ADMIN' ? {} : { product: { ownerId: user.sub } };
       const rows = await this.prisma.stock.findMany({
         where,
-        include: { product: { select: { nameUz: true, nameRu: true, nameEn: true, costPrice: true, unit: true, type: true } } },
+        include: { product: { select: { nameUz: true, nameRu: true, nameEn: true, costPrice: true, unit: true, types: true } } },
       });
       let totalQty = 0;
       let totalValue = 0;
@@ -158,7 +159,7 @@ export class ReportsService {
         if (s.minQuantity > 0 && s.quantity <= s.minQuantity) {
           low.push({ name: s.product?.nameUz || s.product?.nameRu || s.product?.nameEn, quantity: s.quantity, minQuantity: s.minQuantity });
         }
-        const cat = s.product?.type ?? '—';
+        const cat = s.product?.types?.[0] ?? '—';
         const c = byCategory.get(cat) ?? { qty: 0, value: 0 };
         c.qty += s.quantity;
         c.value += value;

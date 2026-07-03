@@ -23,11 +23,10 @@ export function ProductFormModal({ product, categories, onClose, onSaved }: Prod
 	const [activeLang, setActiveLang] = useState<Lang>("uz");
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [brandInput, setBrandInput] = useState("");
 	const [form, setForm] = useState<ProductFormData>(() => product ? {
 		nameUz: product.nameUz, nameRu: product.nameRu, nameEn: product.nameEn,
 		descriptionUz: product.descriptionUz, descriptionRu: product.descriptionRu, descriptionEn: product.descriptionEn,
-		brand: product.brand, type: product.type, subtypes: product.subtypes ?? [], image: product.image,
+		types: product.types ?? [], subtypes: product.subtypes ?? [], image: product.image,
 		costPrice: product.costPrice, sellPrice: product.sellPrice, wholesalePrice: product.wholesalePrice,
 	} : EMPTY_PRODUCT);
 
@@ -38,6 +37,7 @@ export function ProductFormModal({ product, categories, onClose, onSaved }: Prod
 
 	async function handleSubmit(e: FormEvent) {
 		e.preventDefault();
+		if (form.types.length === 0) { setError("Kamida bitta kategoriya tanlang"); return; }
 		setSubmitting(true);
 		setError(null);
 		try {
@@ -52,17 +52,28 @@ export function ProductFormModal({ product, categories, onClose, onSaved }: Prod
 		finally { setSubmitting(false); }
 	}
 
-	function addBrand() {
-		const v = brandInput.trim();
-		if (!v) return;
-		setForm((p) => p.brand.includes(v) ? p : { ...p, brand: [...p.brand, v] });
-		setBrandInput("");
+	function toggleType(slug: string) {
+		setForm((p) => {
+			if (p.types.includes(slug)) {
+				// Deselecting a category also drops its subcategory selections.
+				const removedSubs = new Set(
+					(categories.find((c) => c.slug === slug)?.subcategories ?? []).map((s) => s.slug),
+				);
+				return {
+					...p,
+					types: p.types.filter((t) => t !== slug),
+					subtypes: p.subtypes.filter((s) => !removedSubs.has(s)),
+				};
+			}
+			return { ...p, types: [...p.types, slug] };
+		});
 	}
 
-	const removeBrand = (b: string) =>
-		setForm((p) => ({ ...p, brand: p.brand.filter((x) => x !== b) }));
+	// Subcategories of all selected categories.
+	const subs = categories
+		.filter((c) => form.types.includes(c.slug))
+		.flatMap((c) => c.subcategories ?? []);
 
-	const subs = categories.find((c) => c.slug === form.type)?.subcategories ?? [];
 	const toggleSub = (slug: string) =>
 		setForm((p) => ({
 			...p,
@@ -87,7 +98,7 @@ export function ProductFormModal({ product, categories, onClose, onSaved }: Prod
 
 			<form className="adm-form" onSubmit={handleSubmit}>
 				<div className="adm-form-grid">
-					<div className="adm-field">
+					<div className="adm-field adm-field-full">
 						<label>Nomi ({langLabel})</label>
 						<input
 							type="text"
@@ -97,14 +108,23 @@ export function ProductFormModal({ product, categories, onClose, onSaved }: Prod
 							required={activeLang === "uz"}
 						/>
 					</div>
-					<div className="adm-field">
-						<label>Kategoriya</label>
-						<select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value, subtypes: [] }))} required>
-							<option value="">— tanlang —</option>
-							{categories.map((c) => (
-								<option key={c.id} value={c.slug}>{c.nameUz || c.nameRu || c.nameEn || c.name}</option>
-							))}
-						</select>
+					<div className="adm-field adm-field-full">
+						<label>Kategoriyalar <span className="adm-field-hint">(bir nechta tanlash mumkin)</span></label>
+						<div className="adm-subtag-list">
+							{categories.map((c) => {
+								const on = form.types.includes(c.slug);
+								return (
+									<button
+										type="button"
+										key={c.id}
+										className={`adm-subtag${on ? " on" : ""}`}
+										onClick={() => toggleType(c.slug)}
+									>
+										{c.nameUz || c.nameRu || c.nameEn || c.name}
+									</button>
+								);
+							})}
+						</div>
 					</div>
 					{subs.length > 0 && (
 						<div className="adm-field adm-field-full">
@@ -126,28 +146,6 @@ export function ProductFormModal({ product, categories, onClose, onSaved }: Prod
 							</div>
 						</div>
 					)}
-					<div className="adm-field adm-field-full">
-						<label>Brendlar <span className="adm-field-hint">(Enter yoki vergul bilan qo'shing)</span></label>
-						{form.brand.length > 0 && (
-							<div className="adm-subtag-list">
-								{form.brand.map((b) => (
-									<button type="button" key={b} className="adm-subtag on" onClick={() => removeBrand(b)} title="O'chirish">
-										{b} ✕
-									</button>
-								))}
-							</div>
-						)}
-						<input
-							type="text"
-							placeholder="Masalan: Kwangshin"
-							value={brandInput}
-							onChange={(e) => setBrandInput(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addBrand(); }
-							}}
-							onBlur={addBrand}
-						/>
-					</div>
 				</div>
 
 				<div className="adm-field">

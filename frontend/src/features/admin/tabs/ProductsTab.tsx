@@ -126,10 +126,13 @@ export function ProductsTab({ user }: { user: AuthUser }) {
 										<div className="adm-table-name">{p.nameUz || p.nameRu || p.nameEn}</div>
 									</td>
 									<td>
-										<span className="adm-table-badge">{catName(p.type)}</span>
+										{(p.types ?? []).map((slug) => (
+											<span key={slug} className="adm-table-badge">{catName(slug)}</span>
+										))}
 										{(p.subtypes ?? []).map((slug) => {
-											const c = categories.find((c) => c.slug === p.type);
-											const s = c?.subcategories?.find((s) => s.slug === slug);
+											const s = categories
+												.flatMap((c) => c.subcategories ?? [])
+												.find((s) => s.slug === slug);
 											return (
 												<span key={slug} className="adm-table-badge adm-table-badge-sub">
 													{s ? (s.nameUz || s.nameRu || s.nameEn || s.name) : slug}
