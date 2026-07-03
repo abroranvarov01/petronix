@@ -3,103 +3,16 @@
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
-import { API_URL, imgUrl } from "@/lib/api";
+import { API_URL } from "@/lib/api";
 import { useLang, useT } from "@/lib/i18n";
 import { addToCart } from "@/lib/cart";
-import { formatUZS } from "@/lib/currency";
+import { localizedName } from "@/lib/localized";
+import { ProductCard } from "@/features/catalog/ProductCard";
+import { CategorySidebar } from "@/features/catalog/CategorySidebar";
+import type { CatalogCategory, CatalogProduct } from "@/features/catalog/types";
 import "./products.css";
-import type { Lang } from "@/lib/i18n";
 
-/* ========================= TYPES ========================= */
-
-interface Product {
-	id: string;
-	nameUz: string;
-	nameRu: string;
-	nameEn: string;
-	descriptionUz: string;
-	descriptionRu: string;
-	descriptionEn: string;
-	image: string;
-	brand: string[];
-	type: string;
-	subtypes: string[];
-	sellPrice: number;
-	owner?: { id: string; name: string };
-}
-
-interface Subcategory {
-	id: string;
-	nameUz: string;
-	nameRu: string;
-	nameEn: string;
-	name: string;
-	slug: string;
-}
-
-interface Category {
-	id: string;
-	nameUz: string;
-	nameRu: string;
-	nameEn: string;
-	name: string;
-	slug: string;
-	subcategories?: Subcategory[];
-}
-
-function getCatName(cat: Category | Subcategory, lang: Lang): string {
-	if (lang === "ru" && cat.nameRu) return cat.nameRu;
-	if (lang === "en" && cat.nameEn) return cat.nameEn;
-	return cat.nameUz || cat.nameRu || cat.nameEn || cat.name || "";
-}
-
-/* ========================= HELPERS ========================= */
-
-function getName(p: Product, lang: Lang): string {
-	if (lang === "ru" && p.nameRu) return p.nameRu;
-	if (lang === "en" && p.nameEn) return p.nameEn;
-	return p.nameUz || p.nameRu || p.nameEn || "";
-}
-
-function getDesc(p: Product, lang: Lang): string {
-	if (lang === "ru" && p.descriptionRu) return p.descriptionRu;
-	if (lang === "en" && p.descriptionEn) return p.descriptionEn;
-	return p.descriptionUz || p.descriptionRu || p.descriptionEn || "";
-}
-
-/* ========================= PRODUCT CARD ========================= */
-
-function ProductCard({ product, lang, onOrder }: {
-	product: Product; lang: Lang; onOrder: () => void;
-}) {
-	const t = useT();
-	const desc = getDesc(product, lang);
-
-	return (
-		<div className="pcard">
-			<div className="pcard-img-wrap">
-				{product.image ? (
-					<img src={imgUrl(product.image)} alt={getName(product, lang)} className="pcard-img" />
-				) : (
-					<div className="pcard-img-placeholder" />
-				)}
-			</div>
-			<div className="pcard-body">
-				<h4 className="pcard-name">{getName(product, lang)}</h4>
-				{product.sellPrice > 0 && (
-					<p className="pcard-price">{formatUZS(product.sellPrice)}</p>
-				)}
-				{desc && <p className="pcard-desc">{desc}</p>}
-				<div className="pcard-actions">
-					<button className="pcard-buy" onClick={onOrder}>{t("prod_add_cart")}</button>
-					<button className="pcard-details">{t("prod_details") || "Подробнее"}</button>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-/* ========================= CATALOG PAGE ========================= */
+const PAGE_SIZE = 24;
 
 export default function CatalogPageWrapper() {
 	return (
@@ -114,11 +27,9 @@ function CatalogPage() {
 	const { lang } = useLang();
 	const t = useT();
 
-	const PAGE_SIZE = 24;
-
-	const [items, setItems] = useState<Product[]>([]);
+	const [items, setItems] = useState<CatalogProduct[]>([]);
 	const [total, setTotal] = useState(0);
-	const [categories, setCategories] = useState<Category[]>([]);
+	const [categories, setCategories] = useState<CatalogCategory[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [loadingMore, setLoadingMore] = useState(false);
 
@@ -209,7 +120,13 @@ function CatalogPage() {
 		});
 	}
 
-	const handleOrder = (product: Product) => {
+	function toggleSubtype(slug: string) {
+		setSelectedSubtypes((prev) =>
+			prev.includes(slug) ? prev.filter((x) => x !== slug) : [...prev, slug],
+		);
+	}
+
+	const handleOrder = (product: CatalogProduct) => {
 		addToCart({
 			productId: product.id,
 			nameUz: product.nameUz,
@@ -225,62 +142,24 @@ function CatalogPage() {
 			<Navbar />
 
 			<div className="catalog-page">
-				{/* Left: category list */}
-				<aside className="catalog-aside">
-					<h3 className="catalog-aside-title">{t("prod_categories")}</h3>
-					<button
-						className={`cat-link${!selectedType ? " active" : ""}`}
-						onClick={() => selectCategory(null)}
-					>
-						{t("prod_all")}
-					</button>
-					{categories.map((cat) => {
-						const isActive = selectedType === cat.slug;
-						const isExpanded = expandedCats.has(cat.slug);
-						const subs = cat.subcategories ?? [];
-						return (
-							<div key={cat.id} className="cat-group">
-								<button
-									className={`cat-link${isActive ? " active" : ""}${isExpanded ? " expanded" : ""}`}
-									onClick={() => selectCategory(cat.slug)}
-								>
-									<span className="cat-link-label">{getCatName(cat, lang)}</span>
-									{subs.length > 0 && (
-										<svg className="cat-link-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-									)}
-								</button>
-								{isExpanded && subs.length > 0 && (
-									<div className="cat-sublist">
-										{subs.map((sub) => (
-											<button
-												key={sub.id}
-												className={`cat-sublink${selectedSubtypes.includes(sub.slug) ? " active" : ""}`}
-												onClick={() =>
-													setSelectedSubtypes((prev) =>
-														prev.includes(sub.slug)
-															? prev.filter((x) => x !== sub.slug)
-															: [...prev, sub.slug],
-													)
-												}
-											>
-												{getCatName(sub, lang)}
-											</button>
-										))}
-									</div>
-								)}
-							</div>
-						);
-					})}
-				</aside>
+				<CategorySidebar
+					categories={categories}
+					lang={lang}
+					selectedType={selectedType}
+					selectedSubtypes={selectedSubtypes}
+					expandedCats={expandedCats}
+					onSelectCategory={selectCategory}
+					onToggleSubtype={toggleSubtype}
+				/>
 
 				{/* Right: products */}
 				<main className="catalog-main">
 					<div className="catalog-toprow">
 						<h2 className="catalog-heading">
 							{activeSubcategory
-								? getCatName(activeSubcategory, lang)
+								? localizedName(activeSubcategory, lang)
 								: activeCategory
-									? getCatName(activeCategory, lang)
+									? localizedName(activeCategory, lang)
 									: t("prod_all_products")}
 						</h2>
 					</div>
