@@ -152,8 +152,9 @@ model OrderItem {
   id           String  @id @default(cuid())
   orderId      String
   order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId    String
-  product      Product @relation(fields: [productId], references: [id])
+  // Nullable: when a product is deleted the line survives via nameSnapshot.
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   sellerId     String?
   nameSnapshot String  @default("")
   qty          Int
@@ -253,7 +254,7 @@ model SupplyItem {
   supplyId  String
   supply    Supply  @relation(fields: [supplyId], references: [id], onDelete: Cascade)
   productId String
-  product   Product @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   qty       Int
   unitCost  Float   @default(0)
 

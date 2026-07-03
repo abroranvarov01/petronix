@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 
@@ -138,8 +138,19 @@ export class ProductsService {
       throw new ForbiddenException('Faqat o\'z mahsulotingizni o\'chirishingiz mumkin');
     }
 
-    const removed = await this.prisma.product.delete({ where: { id } });
-    await this.redis.delPattern('products:*');
-    return removed;
+    try {
+      const removed = await this.prisma.product.delete({ where: { id } });
+      await this.redis.delPattern('products:*');
+      return removed;
+    } catch (e: any) {
+      // P2003 — a foreign key still points at the product (e.g. the migration
+      // relaxing OrderItem/SupplyItem delete rules hasn't been applied yet).
+      if (e?.code === 'P2003') {
+        throw new ConflictException(
+          "Mahsulot buyurtmalar yoki kirimlarda ishlatilgan — o'chirib bo'lmaydi",
+        );
+      }
+      throw e;
+    }
   }
 }

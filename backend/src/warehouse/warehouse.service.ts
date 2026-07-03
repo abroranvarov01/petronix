@@ -137,9 +137,10 @@ export class WarehouseService {
 
   // ── Order integration ────────────────────────────────────────────────
   /** Decrease stock for each order item (called when an order is confirmed/paid). */
-  async postOrderSale(order: { id: string; items: { productId: string; qty: number; unitPrice: number }[] }, userId?: string) {
+  async postOrderSale(order: { id: string; items: { productId: string | null; qty: number; unitPrice: number }[] }, userId?: string) {
     const wh = await this.getDefaultWarehouse();
     for (const it of order.items) {
+      if (!it.productId) continue; // product deleted since ordering
       await this.applyMovement({
         productId: it.productId, warehouseId: wh.id, type: 'SALE', qty: -Math.abs(it.qty),
         unitCost: it.unitPrice, reason: 'Продажа', refType: 'order', refId: order.id, userId,
@@ -148,9 +149,10 @@ export class WarehouseService {
   }
 
   /** Reverse a previously posted sale (called when an order is cancelled). */
-  async reverseOrderSale(order: { id: string; items: { productId: string; qty: number }[] }, userId?: string) {
+  async reverseOrderSale(order: { id: string; items: { productId: string | null; qty: number }[] }, userId?: string) {
     const wh = await this.getDefaultWarehouse();
     for (const it of order.items) {
+      if (!it.productId) continue; // product deleted since ordering
       await this.applyMovement({
         productId: it.productId, warehouseId: wh.id, type: 'ADJUSTMENT', qty: Math.abs(it.qty),
         reason: 'Возврат (отмена заказа)', refType: 'order', refId: order.id, userId,

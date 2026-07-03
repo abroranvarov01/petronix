@@ -97,12 +97,14 @@ export class ReportsService {
         revenue += r;
         cost += c;
         const name = it.nameSnapshot || it.product?.nameUz || it.product?.nameRu || it.product?.nameEn || '';
-        const p = byProduct.get(it.productId) ?? { name, revenue: 0, cost: 0, profit: 0, qty: 0 };
+        // Deleted products have productId = null — group them by snapshot name.
+        const groupKey = it.productId ?? name;
+        const p = byProduct.get(groupKey) ?? { name, revenue: 0, cost: 0, profit: 0, qty: 0 };
         p.revenue += r;
         p.cost += c;
         p.profit += r - c;
         p.qty += it.qty;
-        byProduct.set(it.productId, p);
+        byProduct.set(groupKey, p);
       }
       const profit = revenue - cost;
       const rows = [...byProduct.values()].sort((a, b) => b.profit - a.profit);
