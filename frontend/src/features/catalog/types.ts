@@ -9,6 +9,7 @@ export interface CatalogProduct {
 	descriptionRu: string;
 	descriptionEn: string;
 	image: string;
+	images?: string[];
 	types: string[];
 	subtypes: string[];
 	sellPrice: number;

@@ -218,6 +218,22 @@ const t = {
   prod_add_cart:   { uz: "Savatga qo'shish",  ru: "В корзину",          en: "Add to cart" },
   prod_in_cart:    { uz: "Savatda",           ru: "В корзине",          en: "In cart" },
 
+  /* ── Product detail page ── */
+  pd_back:         { uz: "Katalogga qaytish", ru: "Назад в каталог",    en: "Back to catalog" },
+  pd_not_found:    { uz: "Mahsulot topilmadi", ru: "Товар не найден",   en: "Product not found" },
+  pd_description:  { uz: "Tavsif",            ru: "Описание",           en: "Description" },
+  pd_no_desc:      { uz: "Tavsif yo'q",       ru: "Описание отсутствует", en: "No description" },
+  pd_qty:          { uz: "Miqdor",            ru: "Количество",         en: "Quantity" },
+  pd_buy_now:      { uz: "Hoziroq sotib olish", ru: "Купить сейчас",    en: "Buy now" },
+  pd_added:        { uz: "Savatga qo'shildi", ru: "Добавлено в корзину", en: "Added to cart" },
+  pd_seller:       { uz: "Sotuvchi",          ru: "Продавец",           en: "Seller" },
+  pd_categories:   { uz: "Kategoriyalar",     ru: "Категории",          en: "Categories" },
+  pd_share:        { uz: "Ulashish",          ru: "Поделиться",         en: "Share" },
+  pd_link_copied:  { uz: "Havola nusxalandi", ru: "Ссылка скопирована", en: "Link copied" },
+  pd_delivery:     { uz: "Butun O'zbekiston bo'ylab yetkazib berish", ru: "Доставка по всему Узбекистану", en: "Delivery across Uzbekistan" },
+  pd_guarantee:    { uz: "Sifat kafolati",    ru: "Гарантия качества",  en: "Quality guarantee" },
+  pd_return:       { uz: "Qaytarish 14 kun ichida", ru: "Возврат в течение 14 дней", en: "14-day return" },
+
   /* ── Cart / Checkout ── */
   cart_title:      { uz: "Savatcha",          ru: "Корзина",            en: "Cart" },
   cart_empty:      { uz: "Savatcha bo'sh",    ru: "Корзина пуста",      en: "Your cart is empty" },

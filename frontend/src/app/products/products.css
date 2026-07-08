@@ -460,6 +460,7 @@
 .pcard-buy:hover { background: linear-gradient(135deg, #16a34a, #15803d); }
 
 .pcard-details {
+    display: block;
     width: 100%;
     padding: 4px 0;
     border: none;
@@ -472,9 +473,16 @@
     font-family: inherit;
     text-decoration: underline;
     text-underline-offset: 2px;
+    text-align: center;
 }
 
 .pcard-details:hover { color: #22c55e; }
+
+/* Name + image are links to the product page */
+.pcard-name-link { text-decoration: none; }
+.pcard-name-link .pcard-name { transition: color 0.2s; }
+.pcard-name-link:hover .pcard-name { color: #22c55e; }
+.pcard-img-wrap { cursor: pointer; }
 
 /* ── Lang switcher (products page) ── */
 .lang-switcher { display: flex; gap: 6px; margin-top: 16px; justify-content: center; }

@@ -823,6 +823,175 @@
   background: #0a1f10;
 }
 
+/* Preview state — constrain the image so a big photo doesn't blow up the form */
+.adm-form .upload-preview {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  border: 1px solid #1e2d3d;
+  border-radius: 12px;
+  background: #060d16;
+  overflow: hidden;
+}
+
+.adm-form .upload-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.adm-form .upload-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(6, 13, 22, 0.7);
+}
+
+.adm-form .upload-progress-bar,
+.adm-form .upload-progress-track {
+  width: 70%;
+  height: 6px;
+  border-radius: 999px;
+  background: #1e2d3d;
+  overflow: hidden;
+}
+
+.adm-form .upload-progress-fill {
+  height: 100%;
+  background: #22c55e;
+  transition: width 0.2s;
+}
+
+.adm-form .upload-progress-label {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.adm-form .upload-preview-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.adm-form .upload-preview:hover .upload-preview-actions {
+  opacity: 1;
+}
+
+.adm-form .upload-change-btn,
+.adm-form .upload-remove-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #1e3347;
+  background: rgba(6, 13, 22, 0.85);
+  color: #c8d6e5;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.adm-form .upload-change-btn:hover { background: #16243a; }
+.adm-form .upload-remove-btn:hover {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  border-color: #f8717144;
+}
+
+.adm-form .upload-icon { font-size: 32px; }
+.adm-form .upload-hint-main { margin: 8px 0 2px; color: #c8d6e5; font-size: 14px; }
+.adm-form .upload-hint-sub { margin: 0; color: #4a6075; font-size: 12px; }
+.adm-form .upload-dropzone { text-align: center; cursor: pointer; }
+
+/* ── MultiImageUpload (product gallery) ─── */
+.adm-form .mimg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+}
+
+.adm-form .mimg-item {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #1e2d3d;
+  background: #060d16;
+}
+.adm-form .mimg-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.adm-form .mimg-item.is-primary { border-color: #22c55e88; }
+
+.adm-form .mimg-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(34, 197, 94, 0.85);
+  color: #04140a;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.adm-form .mimg-item-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: linear-gradient(transparent, rgba(6, 13, 22, 0.85));
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.adm-form .mimg-item:hover .mimg-item-actions { opacity: 1; }
+.adm-form .mimg-item-actions button {
+  flex: 1;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.adm-form .mimg-item-actions button:hover { background: rgba(255, 255, 255, 0.24); }
+.adm-form .mimg-item-actions .mimg-del { flex: 0 0 28px; }
+.adm-form .mimg-item-actions .mimg-del:hover { background: rgba(248, 113, 113, 0.4); }
+
+.adm-form .mimg-add {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 2px dashed #1e2d3d;
+  border-radius: 10px;
+  background: #060d16;
+  color: #4a6075;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.adm-form .mimg-add:hover,
+.adm-form .mimg-add.is-dragging { border-color: #22c55e55; background: #0a1f10; color: #94a3b8; }
+.adm-form .mimg-add-icon { font-size: 24px; line-height: 1; }
+.adm-form .mimg-add-hint { font-size: 11px; text-align: center; padding: 0 4px; }
+
+.adm-form .mimg-note { margin: 8px 0 0; font-size: 11px; color: #4a6075; }
+
 /* ── Users management ──────────────────── */
 .adm-nav-badge {
   margin-left: auto;

@@ -111,7 +111,10 @@ model Product {
   types          String[] @default([])
   subtypes       String[]
   unit           String   @default("dona")
+  // Primary image (kept for cart / cards / admin table). Mirrors images[0].
   image          String   @default("")
+  // Full ordered gallery shown on the product page.
+  images         String[] @default([])
   costPrice      Float    @default(0)
   sellPrice      Float    @default(0)
   wholesalePrice Float    @default(0)

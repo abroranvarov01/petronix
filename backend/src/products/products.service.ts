@@ -87,6 +87,7 @@ export class ProductsService {
         types: true,
         subtypes: true,
         image: true,
+        images: true,
         sellPrice: true,
         owner: { select: { id: true, name: true } },
         createdAt: true,

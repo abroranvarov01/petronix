@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import ImageUpload from "@/components/ImageUpload";
+import MultiImageUpload from "@/components/MultiImageUpload";
 import { API_URL } from "@/lib/api";
 import { authHeaders } from "@/lib/auth";
 import { EMPTY_PRODUCT, LANGS, ProductFormData, type Lang } from "../constants";
@@ -27,6 +27,7 @@ export function ProductFormModal({ product, categories, onClose, onSaved }: Prod
 		nameUz: product.nameUz, nameRu: product.nameRu, nameEn: product.nameEn,
 		descriptionUz: product.descriptionUz, descriptionRu: product.descriptionRu, descriptionEn: product.descriptionEn,
 		types: product.types ?? [], subtypes: product.subtypes ?? [], image: product.image,
+			images: product.images ?? (product.image ? [product.image] : []),
 		costPrice: product.costPrice, sellPrice: product.sellPrice, wholesalePrice: product.wholesalePrice,
 	} : EMPTY_PRODUCT);
 
@@ -177,10 +178,10 @@ export function ProductFormModal({ product, categories, onClose, onSaved }: Prod
 				</div>
 
 				<div className="adm-field">
-					<label>Rasm</label>
-					<ImageUpload
-						value={form.image}
-						onChange={(path) => setForm((p) => ({ ...p, image: path }))}
+					<label>Rasmlar</label>
+					<MultiImageUpload
+						value={form.images}
+						onChange={(paths) => setForm((p) => ({ ...p, images: paths, image: paths[0] ?? "" }))}
 						onError={(msg) => setError(msg)}
 					/>
 				</div>

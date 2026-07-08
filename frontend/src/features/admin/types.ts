@@ -20,6 +20,7 @@ export interface Product {
 	types: string[];
 	subtypes: string[];
 	image: string;
+	images?: string[];
 	costPrice: number;
 	sellPrice: number;
 	wholesalePrice: number;
