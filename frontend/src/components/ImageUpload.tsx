@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { API_URL, imgUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { compressImage } from "@/lib/image";
 
 interface ImageUploadProps {
   value: string;
@@ -21,18 +22,22 @@ export default function ImageUpload({ value, onChange, onError }: ImageUploadPro
 
   function validate(file: File): string | null {
     if (!ALLOWED_TYPES.includes(file.type)) return "Faqat JPEG, PNG va WebP formatlar";
-    if (file.size > MAX_SIZE) return "Fayl hajmi 5 MB dan oshmasligi kerak";
+    if (file.size > 30 * 1024 * 1024) return "Fayl hajmi juda katta (30 MB)";
     return null;
   }
 
-  const upload = useCallback(async (file: File) => {
-    const err = validate(file);
+  const upload = useCallback(async (original: File) => {
+    const err = validate(original);
     if (err) { onError?.(err); return; }
 
-    // Local preview immediately
+    // Local preview immediately (from the original — instant, no wait)
     const reader = new FileReader();
     reader.onload = (e) => setLocalPreview(e.target?.result as string);
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(original);
+
+    // Shrink + re-encode in the browser so we never hit the proxy body limit.
+    const file = await compressImage(original);
+    if (file.size > MAX_SIZE) { onError?.("Rasm hajmi juda katta"); setLocalPreview(""); return; }
 
     // XHR for progress tracking
     const fd = new FormData();

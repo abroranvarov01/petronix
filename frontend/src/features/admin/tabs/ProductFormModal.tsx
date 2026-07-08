@@ -28,6 +28,7 @@ export function ProductFormModal({ product, categories, onClose, onSaved }: Prod
 		descriptionUz: product.descriptionUz, descriptionRu: product.descriptionRu, descriptionEn: product.descriptionEn,
 		types: product.types ?? [], subtypes: product.subtypes ?? [], image: product.image,
 			images: product.images ?? (product.image ? [product.image] : []),
+		isOriginal: product.isOriginal ?? false,
 		costPrice: product.costPrice, sellPrice: product.sellPrice, wholesalePrice: product.wholesalePrice,
 	} : EMPTY_PRODUCT);
 
@@ -184,6 +185,18 @@ export function ProductFormModal({ product, categories, onClose, onSaved }: Prod
 						onChange={(paths) => setForm((p) => ({ ...p, images: paths, image: paths[0] ?? "" }))}
 						onError={(msg) => setError(msg)}
 					/>
+				</div>
+
+				<div className="adm-field">
+					<label className="adm-toggle">
+						<input
+							type="checkbox"
+							checked={form.isOriginal}
+							onChange={(e) => setForm((p) => ({ ...p, isOriginal: e.target.checked }))}
+						/>
+						<span className="adm-toggle-track"><span className="adm-toggle-thumb" /></span>
+						<span className="adm-toggle-text">Original mahsulot</span>
+					</label>
 				</div>
 
 				{error && <div className="adm-error">{error}</div>}

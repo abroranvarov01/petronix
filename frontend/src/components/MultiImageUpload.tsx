@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { API_URL, imgUrl } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { compressImage } from "@/lib/image";
 
 interface MultiImageUploadProps {
   value: string[];
@@ -21,16 +22,26 @@ export default function MultiImageUpload({ value, onChange, onError, max = 8 }: 
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(0); // count of in-flight uploads
 
-  const uploadOne = useCallback((file: File): Promise<string | null> => {
-    if (!ALLOWED_TYPES.includes(file.type)) {
+  const uploadOne = useCallback(async (original: File): Promise<string | null> => {
+    if (!ALLOWED_TYPES.includes(original.type)) {
       onError?.("Faqat JPEG, PNG va WebP formatlar");
-      return Promise.resolve(null);
+      return null;
     }
+    // Guard against absurdly large originals (browser decode would choke); the
+    // usual case is handled by compression below, not this limit.
+    if (original.size > 30 * 1024 * 1024) {
+      onError?.("Fayl hajmi juda katta (30 MB dan oshmasligi kerak)");
+      return null;
+    }
+
+    // Shrink + re-encode in the browser so we never hit the proxy/body limit.
+    const file = await compressImage(original);
     if (file.size > MAX_SIZE) {
-      onError?.("Fayl hajmi 5 MB dan oshmasligi kerak");
-      return Promise.resolve(null);
+      onError?.("Rasm hajmi juda katta");
+      return null;
     }
-    return new Promise((resolve) => {
+
+    return new Promise<string | null>((resolve) => {
       const fd = new FormData();
       fd.append("file", file);
       const xhr = new XMLHttpRequest();

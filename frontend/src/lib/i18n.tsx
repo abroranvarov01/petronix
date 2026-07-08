@@ -219,6 +219,7 @@ const t = {
   prod_in_cart:    { uz: "Savatda",           ru: "В корзине",          en: "In cart" },
 
   /* ── Product detail page ── */
+  badge_original:  { uz: "Original",          ru: "Оригинал",           en: "Original" },
   pd_back:         { uz: "Katalogga qaytish", ru: "Назад в каталог",    en: "Back to catalog" },
   pd_not_found:    { uz: "Mahsulot topilmadi", ru: "Товар не найден",   en: "Product not found" },
   pd_description:  { uz: "Tavsif",            ru: "Описание",           en: "Description" },

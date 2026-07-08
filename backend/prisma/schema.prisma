@@ -115,6 +115,8 @@ model Product {
   image          String   @default("")
   // Full ordered gallery shown on the product page.
   images         String[] @default([])
+  // Genuine/original product — shows an "Original" badge on card & product page.
+  isOriginal     Boolean  @default(false)
   costPrice      Float    @default(0)
   sellPrice      Float    @default(0)
   wholesalePrice Float    @default(0)

@@ -18,6 +18,7 @@ export function ProductCard({ product, lang, onOrder }: {
 	return (
 		<div className="pcard">
 			<Link href={href} className="pcard-img-wrap">
+				{product.isOriginal && <span className="pcard-badge-original">{t("badge_original")}</span>}
 				{product.image ? (
 					<img src={imgUrl(product.image)} alt={localizedName(product, lang)} className="pcard-img" />
 				) : (

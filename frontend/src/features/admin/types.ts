@@ -21,6 +21,7 @@ export interface Product {
 	subtypes: string[];
 	image: string;
 	images?: string[];
+	isOriginal?: boolean;
 	costPrice: number;
 	sellPrice: number;
 	wholesalePrice: number;

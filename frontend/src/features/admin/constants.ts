@@ -18,6 +18,7 @@ export const EMPTY_PRODUCT = {
 	subtypes: [] as string[],
 	image: "",
 	images: [] as string[],
+	isOriginal: false,
 	costPrice: 0,
 	sellPrice: 0,
 	wholesalePrice: 0,

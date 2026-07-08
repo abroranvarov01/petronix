@@ -992,6 +992,42 @@
 
 .adm-form .mimg-note { margin: 8px 0 0; font-size: 11px; color: #4a6075; }
 
+/* ── Toggle switch (e.g. "Original" flag) ─ */
+.adm-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.adm-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.adm-toggle-track {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: #1e2d3d;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.adm-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #7a8fa3;
+  transition: transform 0.15s, background 0.15s;
+}
+.adm-toggle input:checked + .adm-toggle-track { background: rgba(34, 197, 94, 0.35); }
+.adm-toggle input:checked + .adm-toggle-track .adm-toggle-thumb {
+  transform: translateX(18px);
+  background: #22c55e;
+}
+.adm-toggle input:focus-visible + .adm-toggle-track { outline: 2px solid #22c55e88; outline-offset: 2px; }
+.adm-toggle-text { font-size: 14px; color: #c8d6e5; }
+
 /* ── Users management ──────────────────── */
 .adm-nav-badge {
   margin-left: auto;

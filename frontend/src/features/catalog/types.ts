@@ -10,6 +10,7 @@ export interface CatalogProduct {
 	descriptionEn: string;
 	image: string;
 	images?: string[];
+	isOriginal?: boolean;
 	types: string[];
 	subtypes: string[];
 	sellPrice: number;

@@ -118,6 +118,9 @@ export default function ProductDetailPage() {
 
 							{/* Right: info + buy box */}
 							<div className="pdp-info">
+								{product.isOriginal && (
+									<span className="pdp-badge-original">✔ {t("badge_original")}</span>
+								)}
 								<h1 className="pdp-title">{localizedName(product, lang)}</h1>
 
 								{productCategories.length > 0 && (
