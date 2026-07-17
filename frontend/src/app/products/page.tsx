@@ -47,6 +47,9 @@ function CatalogPage() {
 	});
 	const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
 	const [search, setSearch] = useState(searchInput.trim());
+	// Random display order: one seed per page visit keeps the shuffle stable
+	// across "load more" (no repeats), while a fresh visit reshuffles.
+	const [seed] = useState(() => Math.random().toString(36).slice(2));
 
 	// Categories (sidebar) — loaded once.
 	useEffect(() => {
@@ -75,6 +78,7 @@ function CatalogPage() {
 		if (selectedType) p.set("type", selectedType);
 		if (selectedSubtypes.length) p.set("subtype", selectedSubtypes.join(","));
 		if (search) p.set("q", search);
+		p.set("seed", seed);
 		p.set("page", String(page));
 		p.set("limit", String(PAGE_SIZE));
 		return p.toString();

@@ -2,6 +2,34 @@ import { Injectable, ForbiddenException, NotFoundException, ConflictException } 
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 
+// Deterministic PRNG (mulberry32) seeded from a string, so the same `seed`
+// yields the same product order across paginated requests.
+function hashSeed(str: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function seededShuffle<T>(arr: T[], seed: string): T[] {
+  let a = hashSeed(seed);
+  const rand = () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService, private redis: RedisService) {}
@@ -14,11 +42,16 @@ export class ProductsService {
     q?: string;
     page?: number | string;
     limit?: number | string;
+    seed?: string;
   }) {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.min(60, Math.max(1, Number(params.limit) || 24));
     const skip = (page - 1) * limit;
     const q = (params.q ?? '').trim();
+    // Products are displayed in a shuffled order. The seed keeps the order
+    // stable across pages (so "load more" never repeats an item); a fresh
+    // page visit sends a new seed and reshuffles.
+    const seed = (params.seed ?? '').trim() || 'default';
 
     // `subtype` may be a comma-separated list — match products having ANY of them.
     const subtypeList = (params.subtype ?? '')
@@ -41,34 +74,45 @@ export class ProductsService {
     };
 
     // Cache the (hot) public catalog reads; invalidated on any product write.
-    const cacheKey = `products:list:${JSON.stringify({ type: params.type ?? '', subtype: params.subtype ?? '', q, page, limit })}`;
+    const cacheKey = `products:list:${JSON.stringify({ type: params.type ?? '', subtype: params.subtype ?? '', q, page, limit, seed })}`;
     return this.redis.wrap(cacheKey, 30, async () => {
-      const [items, total] = await this.prisma.$transaction([
-        this.prisma.product.findMany({
-          where,
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: limit,
-          select: {
-            id: true,
-            nameUz: true,
-            nameRu: true,
-            nameEn: true,
-            descriptionUz: true,
-            descriptionRu: true,
-            descriptionEn: true,
-            types: true,
-            subtypes: true,
-            image: true,
-            isOriginal: true,
-            sellPrice: true,
-            owner: { select: { id: true, name: true } },
-            createdAt: true,
-            updatedAt: true,
-          },
-        }),
-        this.prisma.product.count({ where }),
-      ]);
+      // Stable base order (by id) → deterministic seeded shuffle → page slice.
+      // Shuffling the full id list keeps pagination consistent for one seed.
+      const all = await this.prisma.product.findMany({
+        where,
+        orderBy: { id: 'asc' },
+        select: { id: true },
+      });
+      const total = all.length;
+      const pageIds = seededShuffle(all.map((p) => p.id), seed).slice(skip, skip + limit);
+
+      const rows = pageIds.length
+        ? await this.prisma.product.findMany({
+            where: { id: { in: pageIds } },
+            select: {
+              id: true,
+              nameUz: true,
+              nameRu: true,
+              nameEn: true,
+              descriptionUz: true,
+              descriptionRu: true,
+              descriptionEn: true,
+              types: true,
+              subtypes: true,
+              image: true,
+              isOriginal: true,
+              sellPrice: true,
+              owner: { select: { id: true, name: true } },
+              createdAt: true,
+              updatedAt: true,
+            },
+          })
+        : [];
+
+      // `IN (...)` doesn't preserve order — reorder to the shuffled sequence.
+      const byId = new Map(rows.map((r) => [r.id, r]));
+      const items = pageIds.map((id) => byId.get(id)).filter(Boolean);
+
       return { items, total, page, limit, pages: Math.ceil(total / limit) };
     });
   }

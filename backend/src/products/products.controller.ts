@@ -16,8 +16,9 @@ export class ProductsController {
     @Query('q') q?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('seed') seed?: string,
   ) {
-    return this.productsService.findAllPublic({ type, subtype, q, page, limit });
+    return this.productsService.findAllPublic({ type, subtype, q, page, limit, seed });
   }
 
   // Только авторизованные — все товары с полными ценами
